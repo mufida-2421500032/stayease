@@ -1,0 +1,783 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reservations – StayEase Property Management</title>
+  <meta name="description" content="Manage daily guest flow and stay records on StayEase Property Management." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:        '#0F2A44',
+            'navy-mid':  '#1a3a5c',
+            'navy-card': '#0B2E4F',
+            gold:        '#C89A43',
+            'gold-light':'#F5E8C5',
+            'gold-pill': '#F3D07C',
+            page:        '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color:#F8F7F4; font-family:'Inter',sans-serif; color:#1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display:none; }
+      .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-lg transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-semibold text-white
+               bg-white/10 rounded-lg border-l-[3px] border-gold;
+      }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex bg-page">
+  <!-- Mobile Sidebar Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+
+  <!-- ══════════════════════ TOAST NOTIFICATION ══════════════════════ -->
+  <div id="toast" class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-[-20px] opacity-0 pointer-events-none">
+    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+    <span id="toast-msg" class="text-[14px] font-semibold">Guest successfully checked in.</span>
+  </div>
+
+  <!-- ══════════════════════ DETAIL MODAL ══════════════════════ -->
+  <div id="detail-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[600px] overflow-hidden flex flex-col max-h-[90vh]">
+      <!-- Modal Header -->
+      <div class="bg-navy px-6 py-4 flex items-center justify-between text-white">
+        <div>
+          <h3 class="font-serif text-[20px] font-bold text-gold">Reservation Detail</h3>
+          <p id="modal-conf-id" class="text-[12px] text-white/70">Conf: #SE-9821</p>
+        </div>
+        <button id="close-detail-modal" class="p-1 hover:bg-white/10 rounded-lg transition-colors text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-6 text-[14px]">
+        <!-- Guest Info -->
+        <div>
+          <h4 class="text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-3 border-b pb-1">Guest Information</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <span class="text-gray-400 text-[12px] block">Full Name</span>
+              <span id="md-guest-name" class="font-bold text-navy">Kemangi Ardana</span>
+            </div>
+            <div>
+              <span class="text-gray-400 text-[12px] block">Email</span>
+              <span id="md-guest-email" class="font-semibold text-navy">kemangi.ardana@email.com</span>
+            </div>
+            <div>
+              <span class="text-gray-400 text-[12px] block">Phone Number</span>
+              <span id="md-guest-phone" class="font-semibold text-navy">+62 855 4433 2211</span>
+            </div>
+            <div>
+              <span class="text-gray-400 text-[12px] block">Membership Status</span>
+              <span id="md-guest-member" class="inline-block bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full">Gold Member</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stay Details -->
+        <div>
+          <h4 class="text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-3 border-b pb-1">Reservation Information</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <span class="text-gray-400 text-[12px] block">Room Number & Type</span>
+              <span id="md-room" class="font-bold text-navy">Suite 402 (Ocean View)</span>
+            </div>
+            <div>
+              <span class="text-gray-400 text-[12px] block">Duration</span>
+              <span id="md-nights" class="font-semibold text-navy">4 Nights</span>
+            </div>
+            <div>
+              <span class="text-gray-400 text-[12px] block">Arrival Date</span>
+              <span id="md-arrival" class="font-semibold text-navy">Jul 24, 2026</span>
+            </div>
+            <div>
+              <span class="text-gray-400 text-[12px] block">Departure Date</span>
+              <span id="md-departure" class="font-semibold text-navy">Jul 28, 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Details -->
+        <div>
+          <h4 class="text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-3 border-b pb-1">Payment Information</h4>
+          <div class="bg-gray-50 rounded-xl p-4 space-y-2">
+            <div class="flex justify-between">
+              <span class="text-gray-500">Total Price:</span>
+              <span id="md-total" class="font-bold text-navy">Rp 8.500.000</span>
+            </div>
+            <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+              <span class="text-gray-500">Payment Status:</span>
+              <span id="md-pay-status" class="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full">PAID</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 px-6 py-4 flex justify-end">
+        <button id="btn-close-md" class="px-5 py-2 bg-navy text-white text-[13px] font-semibold rounded-xl hover:bg-navy-mid transition-colors">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ CHECKIN / CHECKOUT CONFIRM MODAL ══════════════════════ -->
+  <div id="action-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[420px] p-7">
+      <div class="flex items-start gap-4 mb-5">
+        <div class="w-10 h-10 rounded-full bg-navy/10 flex items-center justify-center flex-shrink-0 text-navy">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="act-modal-title" class="font-serif text-[18px] font-bold text-navy mb-1">Confirm Guest Check-in</h3>
+          <p id="act-modal-desc" class="text-[13px] text-gray-500 leading-relaxed">
+            Are you sure the guest has arrived and completed all required documents?
+          </p>
+        </div>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button id="act-btn-cancel" class="px-4 py-2 text-[13px] font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+          Cancel
+        </button>
+        <button id="act-btn-confirm" class="px-5 py-2 text-[13px] font-semibold text-white bg-navy hover:bg-navy-mid rounded-xl transition-colors shadow-sm">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[215px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+
+    <!-- Logo -->
+    <div class="px-6 pt-6 pb-5 border-b border-white/10">
+      <a href="receptionist-dashboard.html" class="block">
+        <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+      </a>
+    </div>
+
+    <!-- Profile -->
+    <div class="px-5 py-4 border-b border-white/10 flex items-center gap-3">
+      <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
+           alt="Cengkeh Nirmala"
+           class="w-10 h-10 rounded-full object-cover border-2 border-gold/30 flex-shrink-0" />
+      <div class="min-w-0">
+        <div class="text-[13px] font-semibold text-white leading-tight truncate">Cengkeh Nirmala</div>
+        <span class="text-[10px] font-bold text-navy bg-gold px-2 py-0.5 rounded-full mt-1 inline-block tracking-wide">
+          Receptionist
+        </span>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto no-scrollbar">
+      <a href="receptionist-dashboard.html" class="sb-link">
+        <i data-lucide="layout-dashboard" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="receptionist-incoming-bookings.html" class="sb-link">
+        <i data-lucide="calendar-clock" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Incoming Bookings</span>
+      </a>
+      <a href="receptionist-reservations.html" class="sb-link-active" aria-current="page">
+        <i data-lucide="clipboard-list" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Reservations</span>
+      </a>
+      <a href="receptionist-checkin.html" class="sb-link">
+        <i data-lucide="key" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Check-in/Check-out</span>
+      </a>
+      <a href="receptionist-guests.html" class="sb-link">
+        <i data-lucide="users" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Guest</span>
+      </a>
+      <a href="receptionist-customers.html" class="sb-link">
+        <i data-lucide="user-check" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Customer Data</span>
+      </a>
+    </nav>
+
+    <!-- Bottom -->
+    <div class="px-4 py-5 border-t border-white/10">
+      <a href="login.html"
+         class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Log Out</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[215px] flex flex-col min-h-screen min-w-0">
+
+    <!-- ============================================================
+         STICKY TOPBAR (MOBILE HAMBURGER)
+    ============================================================ -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 lg:hidden shadow-sm">
+      <button id="mobile-menu-btn" class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Sidebar Menu">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+      <span class="font-serif text-[18px] font-bold text-navy">StayEase</span>
+    </header>
+
+
+    <!-- Top Header -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm">
+      <!-- Search input -->
+      <div class="relative w-full max-w-md">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input id="header-search"
+               type="text"
+               placeholder="Search guests by name or ID..."
+               class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 focus:ring-2 focus:ring-navy/10 transition-all" />
+      </div>
+
+      <!-- Header Icons -->
+      <div class="flex items-center gap-2">
+        <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors relative" aria-label="Notifications">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+        </button>
+        <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors" aria-label="Help Center">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+        <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors" aria-label="Applications Menu">
+          <i data-lucide="grid" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 px-8 py-7 max-w-[1240px]">
+
+      <!-- Title & Subtitle -->
+      <div class="mb-6">
+        <h1 class="font-serif text-[36px] font-bold text-navy leading-tight mb-1">Reservations</h1>
+        <p class="text-[15px] text-gray-500">Manage your daily guest flow and stay records.</p>
+      </div>
+
+      <!-- ── 4 SUMMARY CARDS ── -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+        <!-- Card 1: Today's Check-ins -->
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">TODAY'S CHECK-INS</div>
+            <div class="text-[32px] font-bold text-navy leading-none">12</div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-navy">
+            <i data-lucide="log-in" class="w-5 h-5"></i>
+          </div>
+        </div>
+
+        <!-- Card 2: Expected Check-outs -->
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">EXPECTED CHECK-OUTS</div>
+            <div class="text-[32px] font-bold text-navy leading-none">08</div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-navy">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
+          </div>
+        </div>
+
+        <!-- Card 3: Pending Payments -->
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">PENDING PAYMENTS</div>
+            <div class="text-[32px] font-bold text-red-600 leading-none">04</div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
+            <i data-lucide="credit-card" class="w-5 h-5"></i>
+          </div>
+        </div>
+
+        <!-- Card 4: Total Occupancy -->
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">TOTAL OCCUPANCY</div>
+            <div class="text-[32px] font-bold text-navy leading-none">86%</div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-gold">
+            <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── FILTER CARD ── -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <!-- Tabs -->
+        <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto" id="filter-tabs">
+          <button class="tab-btn px-4 py-2 rounded-full text-[13px] font-bold bg-[#F3D07C] text-navy transition-colors" data-filter="all">
+            All Reservations
+          </button>
+          <button class="tab-btn px-4 py-2 rounded-full text-[13px] font-semibold text-gray-500 hover:text-navy hover:bg-gray-100 transition-colors" data-filter="checkin">
+            Today's Check-ins
+          </button>
+          <button class="tab-btn px-4 py-2 rounded-full text-[13px] font-semibold text-gray-500 hover:text-navy hover:bg-gray-100 transition-colors" data-filter="pending">
+            Pending Payments
+          </button>
+        </div>
+
+        <!-- Sort dropdown -->
+        <div class="flex items-center gap-2 flex-shrink-0 text-[13px]">
+          <span class="text-gray-400 font-medium">Sort by:</span>
+          <select id="sort-select" class="px-3.5 py-1.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold text-gray-700 focus:outline-none">
+            <option value="arrival">Arrival Date</option>
+            <option value="name">Guest Name</option>
+            <option value="room">Room Number</option>
+            <option value="status">Status</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ── RESERVATION TABLE ── -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-8">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left min-w-[840px]">
+            <thead>
+              <tr class="border-b border-gray-100 bg-gray-50/50">
+                <th class="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">GUEST NAME</th>
+                <th class="py-4 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">ROOM</th>
+                <th class="py-4 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">ARRIVAL</th>
+                <th class="py-4 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">DEPARTURE</th>
+                <th class="py-4 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">STATUS</th>
+                <th class="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="reservations-table-body" class="divide-y divide-gray-50 text-[14px]">
+
+              <!-- Row 1: Kemangi Ardana -->
+              <tr class="hover:bg-gray-50/60 transition-colors" data-type="checkin" data-search="kemangi ardana se-9821 suite 402">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold text-[13px] flex items-center justify-center flex-shrink-0">KA</div>
+                    <div>
+                      <div class="font-bold text-navy leading-snug">Kemangi Ardana</div>
+                      <div class="text-[12px] text-gray-400">Conf: #SE-9821</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-4 px-5">
+                  <div class="font-bold text-navy leading-snug">Suite 402</div>
+                  <div class="text-[12px] text-gray-400 italic">Ocean View</div>
+                </td>
+                <td class="py-4 px-5 text-gray-700 font-medium">Juli 24, 2026</td>
+                <td class="py-4 px-5 text-gray-700 font-medium">Juli 28, 2026</td>
+                <td class="py-4 px-5">
+                  <span class="bg-emerald-100 text-emerald-800 text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">PAID</span>
+                </td>
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-3">
+                    <button class="btn-view-detail text-gray-400 hover:text-navy transition-colors" aria-label="View Detail">
+                      <i data-lucide="eye" class="w-4 h-4"></i>
+                    </button>
+                    <button class="btn-action-checkin border border-navy text-navy hover:bg-navy hover:text-white text-[12px] font-bold px-3.5 py-1.5 rounded-lg transition-colors">
+                      Check-in
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 2: Paprika Elvano -->
+              <tr class="hover:bg-gray-50/60 transition-colors" data-type="pending" data-search="paprika elvano se-4432 room 105">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-800 font-bold text-[13px] flex items-center justify-center flex-shrink-0">PE</div>
+                    <div>
+                      <div class="font-bold text-navy leading-snug">Paprika Elvano</div>
+                      <div class="text-[12px] text-gray-400">Conf: #SE-4432</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-4 px-5">
+                  <div class="font-bold text-navy leading-snug">Room 105</div>
+                  <div class="text-[12px] text-gray-400 italic">Standard Queen</div>
+                </td>
+                <td class="py-4 px-5 text-gray-700 font-medium">Juli 24, 2026</td>
+                <td class="py-4 px-5 text-gray-700 font-medium">Juli 25, 2026</td>
+                <td class="py-4 px-5">
+                  <span class="bg-red-100 text-red-700 text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">PENDING</span>
+                </td>
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-3">
+                    <button class="btn-view-detail text-gray-400 hover:text-navy transition-colors" aria-label="View Detail">
+                      <i data-lucide="eye" class="w-4 h-4"></i>
+                    </button>
+                    <button class="btn-action-checkin border border-navy text-navy hover:bg-navy hover:text-white text-[12px] font-bold px-3.5 py-1.5 rounded-lg transition-colors">
+                      Check-in
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 3: Kapulaga Wirawan -->
+              <tr class="hover:bg-gray-50/60 transition-colors" data-type="checked-in" data-search="kapulaga wirawan se-1109 suite 501">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-800 font-bold text-[13px] flex items-center justify-center flex-shrink-0">KW</div>
+                    <div>
+                      <div class="font-bold text-navy leading-snug">Kapulaga Wirawan</div>
+                      <div class="text-[12px] text-gray-400">Conf: #SE-1109</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-4 px-5">
+                  <div class="font-bold text-navy leading-snug">Suite 501</div>
+                  <div class="text-[12px] text-gray-400 italic">Penthouse</div>
+                </td>
+                <td class="py-4 px-5 text-gray-700 font-medium">Juli 21, 2026</td>
+                <td class="py-4 px-5 text-gray-700 font-medium">Juli 24, 2026</td>
+                <td class="py-4 px-5">
+                  <span class="bg-emerald-100 text-emerald-800 text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">PAID</span>
+                </td>
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-3">
+                    <button class="btn-view-detail text-gray-400 hover:text-navy transition-colors" aria-label="View Detail">
+                      <i data-lucide="eye" class="w-4 h-4"></i>
+                    </button>
+                    <button class="btn-action-checkout border border-gray-300 text-gray-600 hover:bg-gray-100 text-[12px] font-bold px-3.5 py-1.5 rounded-lg transition-colors">
+                      Check-out
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 4: Ketumbar Anindya -->
+              <tr class="hover:bg-gray-50/60 transition-colors" data-type="checkin" data-search="ketumbar anindya se-3382 room 312">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-gray-200 text-gray-700 font-bold text-[13px] flex items-center justify-center flex-shrink-0">KA</div>
+                    <div>
+                      <div class="font-bold text-navy leading-snug">Ketumbar Anindya</div>
+                      <div class="text-[12px] text-gray-400">Conf: #SE-3382</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-4 px-5">
+                  <div class="font-bold text-navy leading-snug">Room 312</div>
+                  <div class="text-[12px] text-gray-400 italic">Deluxe King</div>
+                </td>
+                <td class="py-4 px-5 text-gray-700 font-medium">Juli 24, 2026</td>
+                <td class="py-4 px-5 text-gray-700 font-medium">Juli 30, 2026</td>
+                <td class="py-4 px-5">
+                  <span class="bg-emerald-100 text-emerald-800 text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">PAID</span>
+                </td>
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-3">
+                    <button class="btn-view-detail text-gray-400 hover:text-navy transition-colors" aria-label="View Detail">
+                      <i data-lucide="eye" class="w-4 h-4"></i>
+                    </button>
+                    <button class="btn-action-checkin border border-navy text-navy hover:bg-navy hover:text-white text-[12px] font-bold px-3.5 py-1.5 rounded-lg transition-colors">
+                      Check-in
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-100 bg-gray-50/30">
+          <p id="showing-text" class="text-[13px] text-gray-500">Showing 1 to 4 of 48 reservations</p>
+          <div class="flex items-center gap-1.5">
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-100 transition-colors">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-navy text-white text-[13px] font-bold">1</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-[13px] font-medium transition-colors">2</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-[13px] font-medium transition-colors">3</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-100 transition-colors">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BOTTOM CARDS: HEATMAP + CONCIERGE ── -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Availability Heatmap (2 Cols) -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-[16px] font-bold text-navy">Availability Heatmap</h2>
+            <div class="flex items-center gap-2 text-[12px] text-gray-500">
+              <span class="w-2.5 h-2.5 rounded-full bg-gold"></span>
+              <span>Peak Demand</span>
+            </div>
+          </div>
+
+          <!-- Vertical Bar Chart -->
+          <div class="flex items-end justify-between gap-3 h-48 pt-4 px-4 border-b border-gray-100">
+            <!-- Bar 1 -->
+            <div class="flex flex-col items-center flex-1 h-full justify-end">
+              <div class="w-full max-w-[32px] bg-gray-100 rounded-t-lg transition-all hover:bg-gold/40" style="height: 30%"></div>
+            </div>
+            <!-- Bar 2 -->
+            <div class="flex flex-col items-center flex-1 h-full justify-end">
+              <div class="w-full max-w-[32px] bg-gray-100 rounded-t-lg transition-all hover:bg-gold/40" style="height: 45%"></div>
+            </div>
+            <!-- Bar 3 (Peak) -->
+            <div class="flex flex-col items-center flex-1 h-full justify-end">
+              <div class="w-full max-w-[32px] bg-gold rounded-t-lg transition-all hover:bg-[#b8883e]" style="height: 85%"></div>
+            </div>
+            <!-- Bar 4 (Peak) -->
+            <div class="flex flex-col items-center flex-1 h-full justify-end">
+              <div class="w-full max-w-[32px] bg-[#8B6914] rounded-t-lg transition-all" style="height: 95%"></div>
+            </div>
+            <!-- Bar 5 (Peak) -->
+            <div class="flex flex-col items-center flex-1 h-full justify-end">
+              <div class="w-full max-w-[32px] bg-gold rounded-t-lg transition-all hover:bg-[#b8883e]" style="height: 90%"></div>
+            </div>
+            <!-- Bar 6 -->
+            <div class="flex flex-col items-center flex-1 h-full justify-end">
+              <div class="w-full max-w-[32px] bg-gray-100 rounded-t-lg transition-all" style="height: 50%"></div>
+            </div>
+            <!-- Bar 7 -->
+            <div class="flex flex-col items-center flex-1 h-full justify-end">
+              <div class="w-full max-w-[32px] bg-gray-100 rounded-t-lg transition-all" style="height: 35%"></div>
+            </div>
+            <!-- Bar 8 -->
+            <div class="flex flex-col items-center flex-1 h-full justify-end">
+              <div class="w-full max-w-[32px] bg-gray-100 rounded-t-lg transition-all" style="height: 25%"></div>
+            </div>
+            <!-- Bar 9 -->
+            <div class="flex flex-col items-center flex-1 h-full justify-end">
+              <div class="w-full max-w-[32px] bg-gray-100 rounded-t-lg transition-all" style="height: 60%"></div>
+            </div>
+            <!-- Bar 10 -->
+            <div class="flex flex-col items-center flex-1 h-full justify-end">
+              <div class="w-full max-w-[32px] bg-gray-100 rounded-t-lg transition-all" style="height: 70%"></div>
+            </div>
+            <!-- Bar 11 -->
+            <div class="flex flex-col items-center flex-1 h-full justify-end">
+              <div class="w-full max-w-[32px] bg-gray-100 rounded-t-lg transition-all" style="height: 40%"></div>
+            </div>
+            <!-- Bar 12 -->
+            <div class="flex flex-col items-center flex-1 h-full justify-end">
+              <div class="w-full max-w-[32px] bg-gray-100 rounded-t-lg transition-all" style="height: 20%"></div>
+            </div>
+          </div>
+
+          <!-- Chart X-axis Labels -->
+          <div class="flex justify-between text-[11px] text-gray-400 font-semibold mt-3 px-2">
+            <span>OCT 20</span>
+            <span>OCT 24</span>
+            <span>OCT 28</span>
+            <span>NOV 02</span>
+            <span>NOV 06</span>
+          </div>
+        </div>
+
+        <!-- Concierge Insights Card (1 Col) -->
+        <div class="bg-navy rounded-2xl p-7 text-white flex flex-col justify-between relative overflow-hidden shadow-md">
+          <!-- Background diamond decorative watermark -->
+          <div class="mb-4">
+            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-gold mb-4">
+              <i data-lucide="gem" class="w-5 h-5"></i>
+            </div>
+            <h3 class="font-serif text-[24px] font-bold text-white mb-3">Concierge Insights</h3>
+            <p class="text-[14px] text-white/80 leading-relaxed">
+              Guest Elena Kuznetsov is a VIP returning visitor. Ensure her favorite floral arrangement is prepared in Room 105 prior to check-in.
+            </p>
+          </div>
+
+          <button id="btn-welcome-kit" type="button"
+                  class="w-full bg-[#1E3E62] hover:bg-[#254A75] border border-white/20 text-white font-bold text-[12px] tracking-wider uppercase py-3 rounded-xl transition-all shadow">
+            PREPARE WELCOME KIT
+          </button>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════ JAVASCRIPT ══════════════════════ -->
+  <script>
+    lucide.createIcons();
+
+    // ── Toast Helper ──
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-msg');
+
+    function showToast(message) {
+      toastMsg.textContent = message;
+      toast.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      }, 3000);
+    }
+
+    // ── Concierge Kit Button ──
+    document.getElementById('btn-welcome-kit').addEventListener('click', () => {
+      showToast("Welcome Kit reminder sent to Housekeeping & Concierge!");
+    });
+
+    // ── Detail Modal ──
+    const detailModal = document.getElementById('detail-modal');
+    const closeDetailBtn = document.getElementById('close-detail-modal');
+    const btnCloseMd = document.getElementById('btn-close-md');
+
+    document.querySelectorAll('.btn-view-detail').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const row = this.closest('tr');
+        const name = row.querySelector('.font-bold.text-navy').textContent;
+        const conf = row.querySelector('.text-gray-400').textContent;
+        const room = row.querySelector('td:nth-child(2)').innerText.replace('\n', ' ');
+
+        document.getElementById('md-guest-name').textContent = name;
+        document.getElementById('modal-conf-id').textContent = conf;
+        document.getElementById('md-room').textContent = room;
+
+        detailModal.classList.remove('hidden');
+      });
+    });
+
+    [closeDetailBtn, btnCloseMd].forEach(b => {
+      b.addEventListener('click', () => detailModal.classList.add('hidden'));
+    });
+    detailModal.addEventListener('click', e => { if (e.target === detailModal) detailModal.classList.add('hidden'); });
+
+    // ── Action Modal (Check-in / Check-out) ──
+    const actionModal = document.getElementById('action-modal');
+    const actTitle = document.getElementById('act-modal-title');
+    const actDesc = document.getElementById('act-modal-desc');
+    const actCancel = document.getElementById('act-btn-cancel');
+    const actConfirm = document.getElementById('act-btn-confirm');
+    let activeAction = '';
+    let targetRow = null;
+
+    document.querySelectorAll('.btn-action-checkin').forEach(btn => {
+      btn.addEventListener('click', function() {
+        targetRow = this.closest('tr');
+        activeAction = 'checkin';
+        actTitle.textContent = 'Confirm Guest Check-in';
+        actDesc.textContent = 'Are you sure the guest has arrived and completed all required documents?';
+        actionModal.classList.remove('hidden');
+      });
+    });
+
+    document.querySelectorAll('.btn-action-checkout').forEach(btn => {
+      btn.addEventListener('click', function() {
+        targetRow = this.closest('tr');
+        activeAction = 'checkout';
+        actTitle.textContent = 'Confirm Guest Check-out';
+        actDesc.textContent = 'Are you sure the guest is ready to check out and all bills are settled?';
+        actionModal.classList.remove('hidden');
+      });
+    });
+
+    actCancel.addEventListener('click', () => actionModal.classList.add('hidden'));
+    actionModal.addEventListener('click', e => { if (e.target === actionModal) actionModal.classList.add('hidden'); });
+
+    actConfirm.addEventListener('click', () => {
+      actionModal.classList.add('hidden');
+      if (activeAction === 'checkin') {
+        showToast('Guest successfully checked in.');
+        if (targetRow) {
+          const actionBtn = targetRow.querySelector('.btn-action-checkin');
+          if (actionBtn) {
+            actionBtn.textContent = 'Check-out';
+            actionBtn.className = 'btn-action-checkout border border-gray-300 text-gray-600 hover:bg-gray-100 text-[12px] font-bold px-3.5 py-1.5 rounded-lg transition-colors';
+          }
+        }
+      } else if (activeAction === 'checkout') {
+        showToast('Guest successfully checked out.');
+      }
+    });
+
+    // ── Real-time Search & Filter Tabs ──
+    const filterBtns = document.querySelectorAll('.tab-btn');
+    const headerSearch = document.getElementById('header-search');
+    const rows = document.querySelectorAll('#reservations-table-body tr');
+    let currentFilter = 'all';
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        filterBtns.forEach(b => {
+          b.className = 'tab-btn px-4 py-2 rounded-full text-[13px] font-semibold text-gray-500 hover:text-navy hover:bg-gray-100 transition-colors';
+        });
+        this.className = 'tab-btn px-4 py-2 rounded-full text-[13px] font-bold bg-[#F3D07C] text-navy transition-colors';
+        currentFilter = this.getAttribute('data-filter');
+        applyFilter();
+      });
+    });
+
+    headerSearch.addEventListener('input', applyFilter);
+
+    function applyFilter() {
+      const q = headerSearch.value.toLowerCase().trim();
+      let visible = 0;
+      rows.forEach(row => {
+        const type = row.getAttribute('data-type');
+        const searchData = row.getAttribute('data-search') || '';
+        const matchTab = (currentFilter === 'all' || type === currentFilter);
+        const matchQuery = (!q || searchData.includes(q));
+
+        if (matchTab && matchQuery) {
+          row.style.display = '';
+          visible++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+      document.getElementById('showing-text').textContent = `Showing 1 to ${visible} of 48 reservations`;
+    }
+  </script>
+
+
+  <script>
+    // Mobile Sidebar Toggle
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+</body>
+</html>

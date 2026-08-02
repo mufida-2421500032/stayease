@@ -1,0 +1,645 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manajemen Check-in & Check-out – StayEase Property Management</title>
+  <meta name="description" content="Kelola proses kedatangan dan keberangkatan tamu hari ini di StayEase Property Management." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:        '#0F2A44',
+            'navy-mid':  '#1a3a5c',
+            gold:        '#C89A43',
+            'gold-light':'#F5E8C5',
+            'gold-card': '#F7D180',
+            page:        '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color:#F8F7F4; font-family:'Inter',sans-serif; color:#1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display:none; }
+      .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-lg transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-semibold text-white
+               bg-white/10 rounded-lg border-l-[3px] border-gold;
+      }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex bg-page">
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+  <!-- ══════════════════════ TOAST NOTIFICATION ══════════════════════ -->
+  <div id="toast" class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-[-20px] opacity-0 pointer-events-none">
+    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+    <span id="toast-msg" class="text-[14px] font-semibold">Guest successfully checked in.</span>
+  </div>
+
+  <!-- ══════════════════════ CHECK-IN MODAL ══════════════════════ -->
+  <div id="checkin-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[500px] overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-navy px-6 py-4 flex items-center justify-between text-white">
+        <div>
+          <h3 class="font-serif text-[20px] font-bold text-gold">Guest Check-in Confirmation</h3>
+          <p class="text-[12px] text-white/70">Verify guest info and checklist before check-in.</p>
+        </div>
+        <button id="close-checkin-modal" class="p-1 hover:bg-white/10 rounded-lg transition-colors text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-5 text-[14px]">
+        <!-- Info summary -->
+        <div class="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-100">
+          <div class="flex justify-between"><span class="text-gray-500">Guest Name:</span><span id="ci-name" class="font-bold text-navy">Kemangi Ardana</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Reservation ID:</span><span id="ci-id" class="font-bold text-gold">#SE-2026-901</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Room Number:</span><span id="ci-room" class="font-bold text-navy">Room 304 (Deluxe)</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Dates:</span><span id="ci-dates" class="font-medium text-gray-700">24 Juli 2026 – 26 Juli 2026</span></div>
+        </div>
+
+        <!-- Verification checklist -->
+        <div>
+          <h4 class="text-[13px] font-bold text-navy mb-2">Verification Checklist:</h4>
+          <div class="space-y-2 text-[13px]">
+            <label class="flex items-center gap-2.5 cursor-pointer">
+              <input type="checkbox" checked class="w-4 h-4 accent-navy rounded" />
+              <span>Identity card has been verified.</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer">
+              <input type="checkbox" checked class="w-4 h-4 accent-navy rounded" />
+              <span>Payment status has been confirmed.</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer">
+              <input type="checkbox" checked class="w-4 h-4 accent-navy rounded" />
+              <span>Room is ready for occupancy.</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer">
+              <input type="checkbox" checked class="w-4 h-4 accent-navy rounded" />
+              <span>Guest information is complete.</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Optional Notes -->
+        <div>
+          <label class="block text-[13px] font-medium text-gray-700 mb-1">Optional Notes:</label>
+          <textarea rows="2" placeholder="Add additional notes if necessary..." class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 focus:outline-none focus:bg-white focus:border-navy/30"></textarea>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+        <button id="btn-cancel-checkin" class="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-semibold rounded-xl hover:bg-gray-100 transition-colors">
+          Cancel
+        </button>
+        <button id="btn-confirm-checkin" class="px-5 py-2 bg-navy text-white text-[13px] font-semibold rounded-xl hover:bg-navy-mid transition-colors shadow-sm">
+          Confirm Check-in
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ CHECK-OUT MODAL ══════════════════════ -->
+  <div id="checkout-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[520px] overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-navy px-6 py-4 flex items-center justify-between text-white">
+        <div>
+          <h3 class="font-serif text-[20px] font-bold text-gold">Guest Check-out Confirmation</h3>
+          <p class="text-[12px] text-white/70">Verify room inspection & payment summary.</p>
+        </div>
+        <button id="close-checkout-modal" class="p-1 hover:bg-white/10 rounded-lg transition-colors text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-5 text-[14px]">
+        <!-- Info summary -->
+        <div class="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-100">
+          <div class="flex justify-between"><span class="text-gray-500">Guest Name:</span><span id="co-name" class="font-bold text-navy">Kapulaga Wirawan</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Room Number:</span><span id="co-room" class="font-bold text-navy">Room 102 (Suite)</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Total Stay:</span><span class="font-medium text-gray-700">3 Nights</span></div>
+        </div>
+
+        <!-- Room Inspection Checklist -->
+        <div>
+          <h4 class="text-[13px] font-bold text-navy mb-2">Room Inspection Checklist:</h4>
+          <div class="space-y-2 text-[13px]">
+            <label class="flex items-center gap-2.5 cursor-pointer">
+              <input type="checkbox" checked class="w-4 h-4 accent-navy rounded" />
+              <span>Room key has been returned.</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer">
+              <input type="checkbox" checked class="w-4 h-4 accent-navy rounded" />
+              <span>Room condition is satisfactory.</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer">
+              <input type="checkbox" checked class="w-4 h-4 accent-navy rounded" />
+              <span>Guest payment has been completed.</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Additional Charges -->
+        <div>
+          <h4 class="text-[13px] font-bold text-navy mb-2">Additional Charges (if any):</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] text-gray-500 mb-0.5">Mini Bar</label>
+              <input id="charge-minibar" type="number" value="150000" class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-[13px] focus:bg-white" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-gray-500 mb-0.5">Laundry / Service</label>
+              <input id="charge-laundry" type="number" value="200000" class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-[13px] focus:bg-white" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Summary -->
+        <div class="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-100">
+          <div class="flex justify-between text-gray-600"><span>Room Charge</span><span>Rp 2.500.000</span></div>
+          <div class="flex justify-between text-gray-600"><span>Additional Charges</span><span id="sum-additional">Rp 350.000</span></div>
+          <div class="flex justify-between text-gray-600"><span>Tax (10%)</span><span>Rp 285.000</span></div>
+          <div class="flex justify-between items-center pt-2 border-t border-gray-200 font-bold text-navy text-[15px]">
+            <span>Total Payment</span>
+            <span id="sum-total" class="text-gold">Rp 3.135.000</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+        <button id="btn-cancel-checkout" class="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-semibold rounded-xl hover:bg-gray-100 transition-colors">
+          Cancel
+        </button>
+        <button id="btn-confirm-checkout" class="px-5 py-2 bg-gold hover:bg-[#b8883e] text-navy text-[13px] font-bold rounded-xl transition-colors shadow-sm">
+          Confirm Check-out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[215px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+
+    <!-- Logo -->
+    <div class="px-6 pt-6 pb-5 border-b border-white/10">
+      <a href="receptionist-dashboard.html" class="block">
+        <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+      </a>
+    </div>
+
+    <!-- Profile -->
+    <div class="px-5 py-4 border-b border-white/10 flex items-center gap-3">
+      <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
+           alt="Cengkeh Nirmala"
+           class="w-10 h-10 rounded-full object-cover border-2 border-gold/30 flex-shrink-0" />
+      <div class="min-w-0">
+        <div class="text-[13px] font-semibold text-white leading-tight truncate">Cengkeh Nirmala</div>
+        <span class="text-[10px] font-bold text-navy bg-gold px-2 py-0.5 rounded-full mt-1 inline-block tracking-wide">
+          Receptionist
+        </span>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto no-scrollbar">
+      <a href="receptionist-dashboard.html" class="sb-link">
+        <i data-lucide="layout-dashboard" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="receptionist-incoming-bookings.html" class="sb-link">
+        <i data-lucide="calendar-clock" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Incoming Bookings</span>
+      </a>
+      <a href="receptionist-reservations.html" class="sb-link">
+        <i data-lucide="clipboard-list" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Reservations</span>
+      </a>
+      <a href="receptionist-checkin.html" class="sb-link-active" aria-current="page">
+        <i data-lucide="key" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Check-in/Check-out</span>
+      </a>
+      <a href="receptionist-guests.html" class="sb-link">
+        <i data-lucide="users" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Guest</span>
+      </a>
+      <a href="receptionist-customers.html" class="sb-link">
+        <i data-lucide="user-check" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Customer Data</span>
+      </a>
+    </nav>
+
+    <!-- Bottom -->
+    <div class="px-4 py-5 border-t border-white/10">
+      <a href="login.html"
+         class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Log Out</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[215px] flex flex-col min-h-screen">
+
+    <!-- ============================================================
+         STICKY TOPBAR (MOBILE HAMBURGER)
+    ============================================================ -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 lg:hidden shadow-sm">
+      <button id="mobile-menu-btn" class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Sidebar Menu">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+      <span class="font-serif text-[18px] font-bold text-navy">StayEase</span>
+    </header>
+
+
+    <!-- Header Section -->
+    <main class="flex-1 px-8 py-7 max-w-[1240px]">
+
+      <!-- Title & Header Icons -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 class="font-serif text-[34px] font-bold text-navy leading-tight mb-1">Manajemen Check-in & Check-out</h1>
+          <p class="text-[15px] text-gray-500">Kelola proses kedatangan dan keberangkatan tamu hari ini.</p>
+        </div>
+        <!-- Right Icons -->
+        <div class="flex items-center gap-3">
+          <button class="p-2.5 text-navy hover:bg-navy/10 rounded-full transition-colors relative" aria-label="Notifikasi">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+          </button>
+          <button class="p-2.5 text-navy hover:bg-navy/10 rounded-full transition-colors" aria-label="Pengaturan">
+            <i data-lucide="settings" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── MAIN MANAGEMENT CARD ── -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-8">
+
+        <!-- Top Navigation Row: Tabs & Search Bar -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 pt-5 pb-3 border-b border-gray-100">
+          
+          <!-- Tabs -->
+          <div class="flex items-center gap-8 border-b border-transparent">
+            <button id="tab-checkin"
+                    class="pb-3 font-serif text-[20px] font-bold text-navy border-b-2 border-gold transition-all">
+              Perlu Check-in
+            </button>
+            <button id="tab-checkout"
+                    class="pb-3 font-serif text-[20px] font-bold text-gray-400 border-b-2 border-transparent hover:text-navy transition-all">
+              Perlu Check-out
+            </button>
+          </div>
+
+          <!-- Search input -->
+          <div class="relative w-full sm:w-80">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </div>
+            <input id="search-input"
+                   type="text"
+                   placeholder="Cari nama tamu atau nomor kamar..."
+                   class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 focus:ring-2 focus:ring-navy/10 transition-all" />
+          </div>
+
+        </div>
+
+        <!-- Guest Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left min-w-[780px]">
+            <thead>
+              <tr class="border-b border-gray-100 bg-gray-50/50">
+                <th class="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">NAMA CUSTOMER</th>
+                <th class="py-4 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">NOMOR KAMAR</th>
+                <th class="py-4 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">TIPE KAMAR</th>
+                <th class="py-4 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">CHECK-IN</th>
+                <th class="py-4 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">CHECK-OUT</th>
+                <th class="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">AKSI</th>
+              </tr>
+            </thead>
+            <tbody id="guest-table-body" class="divide-y divide-gray-50 text-[14px]">
+
+              <!-- Row 1 (Need Check-in) -->
+              <tr class="hover:bg-gray-50/60 transition-colors row-checkin" data-search="kemangi ardana room 304 deluxe">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-800 font-bold text-[13px] flex items-center justify-center flex-shrink-0">KA</div>
+                    <span class="font-bold text-navy">Kemangi Ardana</span>
+                  </div>
+                </td>
+                <td class="py-4 px-5 font-semibold text-navy">Room 304</td>
+                <td class="py-4 px-5">
+                  <span class="bg-[#FDF4E3] text-[#8B6914] text-[12px] font-semibold px-3 py-1 rounded-full">Deluxe</span>
+                </td>
+                <td class="py-4 px-5 text-gray-700 font-medium">24 Juli 2026</td>
+                <td class="py-4 px-5 text-gray-700 font-medium">26 Juli 2026</td>
+                <td class="py-4 px-6 text-center">
+                  <button class="btn-trigger-checkin bg-navy hover:bg-navy-mid text-white text-[13px] font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">
+                    Check-in Sekarang
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 2 (Need Check-in) -->
+              <tr class="hover:bg-gray-50/60 transition-colors row-checkin" data-search="ketumbar anindya room 501 suite">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-800 font-bold text-[13px] flex items-center justify-center flex-shrink-0">KA</div>
+                    <span class="font-bold text-navy">Ketumbar Anindya</span>
+                  </div>
+                </td>
+                <td class="py-4 px-5 font-semibold text-navy">Room 501</td>
+                <td class="py-4 px-5">
+                  <span class="bg-[#EAECEF] text-gray-600 text-[12px] font-semibold px-3 py-1 rounded-full">Suite</span>
+                </td>
+                <td class="py-4 px-5 text-gray-700 font-medium">25 Juli 2026</td>
+                <td class="py-4 px-5 text-gray-700 font-medium">28 Juli 2026</td>
+                <td class="py-4 px-6 text-center">
+                  <button class="btn-trigger-checkin bg-navy hover:bg-navy-mid text-white text-[13px] font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">
+                    Check-in Sekarang
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 3 (Need Check-out - Hidden initially) -->
+              <tr class="hover:bg-gray-50/60 transition-colors row-checkout hidden" data-search="kapulaga wirawan room 102 suite">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[13px] flex items-center justify-center flex-shrink-0">KW</div>
+                    <span class="font-bold text-navy">Kapulaga Wirawan</span>
+                  </div>
+                </td>
+                <td class="py-4 px-5 font-semibold text-navy">Room 102</td>
+                <td class="py-4 px-5">
+                  <span class="bg-[#EAECEF] text-gray-600 text-[12px] font-semibold px-3 py-1 rounded-full">Executive Suite</span>
+                </td>
+                <td class="py-4 px-5 text-gray-700 font-medium">21 Juli 2026</td>
+                <td class="py-4 px-5 text-gray-700 font-medium">24 Juli 2026</td>
+                <td class="py-4 px-6 text-center">
+                  <button class="btn-trigger-checkout bg-gold hover:bg-[#b8883e] text-navy text-[13px] font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">
+                    Check-out Sekarang
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 4 (Need Check-out - Hidden initially) -->
+              <tr class="hover:bg-gray-50/60 transition-colors row-checkout hidden" data-search="erlangga pala room 210 standard">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-purple-100 text-purple-800 font-bold text-[13px] flex items-center justify-center flex-shrink-0">EP</div>
+                    <span class="font-bold text-navy">Erlangga Pala</span>
+                  </div>
+                </td>
+                <td class="py-4 px-5 font-semibold text-navy">Room 210</td>
+                <td class="py-4 px-5">
+                  <span class="bg-gray-100 text-gray-700 text-[12px] font-semibold px-3 py-1 rounded-full">Standard</span>
+                </td>
+                <td class="py-4 px-5 text-gray-700 font-medium">22 Juli 2026</td>
+                <td class="py-4 px-5 text-gray-700 font-medium">24 Juli 2026</td>
+                <td class="py-4 px-6 text-center">
+                  <button class="btn-trigger-checkout bg-gold hover:bg-[#b8883e] text-navy text-[13px] font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">
+                    Check-out Sekarang
+                  </button>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── DAILY SUMMARY CARDS (3 Cards) ── -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- Card 1: Navy -->
+        <div class="bg-navy rounded-2xl p-7 text-white flex flex-col justify-between min-h-[140px] shadow-sm">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-white/70 mb-4">TOTAL CHECK-IN HARI INI</div>
+          <div id="stat-checkin-count" class="font-serif text-[48px] font-bold text-white leading-none">12</div>
+        </div>
+
+        <!-- Card 2: White -->
+        <div class="bg-white rounded-2xl p-7 border border-gray-100 flex flex-col justify-between min-h-[140px] shadow-sm">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-4">KAMAR TERSEDIA</div>
+          <div id="stat-available-count" class="font-serif text-[48px] font-bold text-navy leading-none">08</div>
+        </div>
+
+        <!-- Card 3: Gold -->
+        <div class="bg-gold-card rounded-2xl p-7 flex flex-col justify-between min-h-[140px] shadow-sm">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-navy/70 mb-4">KEPUASAN LAYANAN</div>
+          <div class="font-serif text-[48px] font-bold text-navy leading-none">4.9 <span class="text-[24px] font-normal text-navy/70">/ 5</span></div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════ JAVASCRIPT ══════════════════════ -->
+  <script>
+    lucide.createIcons();
+
+    // ── Toast Helper ──
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-msg');
+
+    function showToast(msg) {
+      toastMsg.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      }, 3000);
+    }
+
+    // ── Tabs Navigation JS ──
+    const tabCheckin  = document.getElementById('tab-checkin');
+    const tabCheckout = document.getElementById('tab-checkout');
+    const rowsCheckin = document.querySelectorAll('.row-checkin');
+    const rowsCheckout= document.querySelectorAll('.row-checkout');
+    let currentTab    = 'checkin';
+
+    tabCheckin.addEventListener('click', () => {
+      currentTab = 'checkin';
+      tabCheckin.className  = 'pb-3 font-serif text-[20px] font-bold text-navy border-b-2 border-gold transition-all';
+      tabCheckout.className = 'pb-3 font-serif text-[20px] font-bold text-gray-400 border-b-2 border-transparent hover:text-navy transition-all';
+      rowsCheckin.forEach(r => r.classList.remove('hidden'));
+      rowsCheckout.forEach(r => r.classList.add('hidden'));
+    });
+
+    tabCheckout.addEventListener('click', () => {
+      currentTab = 'checkout';
+      tabCheckout.className = 'pb-3 font-serif text-[20px] font-bold text-navy border-b-2 border-gold transition-all';
+      tabCheckin.className  = 'pb-3 font-serif text-[20px] font-bold text-gray-400 border-b-2 border-transparent hover:text-navy transition-all';
+      rowsCheckout.forEach(r => r.classList.remove('hidden'));
+      rowsCheckin.forEach(r => r.classList.add('hidden'));
+    });
+
+    // ── Search Input Filter ──
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('input', function() {
+      const q = this.value.toLowerCase().trim();
+      const targetRows = (currentTab === 'checkin') ? rowsCheckin : rowsCheckout;
+
+      targetRows.forEach(row => {
+        const searchData = row.getAttribute('data-search') || '';
+        if (!q || searchData.includes(q)) {
+          row.classList.remove('hidden');
+        } else {
+          row.classList.add('hidden');
+        }
+      });
+    });
+
+    // ── Check-in Flow Modal ──
+    const checkinModal  = document.getElementById('checkin-modal');
+    const closeCiBtn    = document.getElementById('close-checkin-modal');
+    const cancelCiBtn   = document.getElementById('btn-cancel-checkin');
+    const confirmCiBtn  = document.getElementById('btn-confirm-checkin');
+    let targetCiRow     = null;
+
+    document.querySelectorAll('.btn-trigger-checkin').forEach(btn => {
+      btn.addEventListener('click', function() {
+        targetCiRow = this.closest('tr');
+        const name = targetCiRow.querySelector('.font-bold.text-navy').textContent;
+        const room = targetCiRow.querySelector('td:nth-child(2)').textContent;
+
+        document.getElementById('ci-name').textContent = name;
+        document.getElementById('ci-room').textContent = room;
+        checkinModal.classList.remove('hidden');
+      });
+    });
+
+    [closeCiBtn, cancelCiBtn].forEach(b => {
+      b.addEventListener('click', () => checkinModal.classList.add('hidden'));
+    });
+    checkinModal.addEventListener('click', e => { if (e.target === checkinModal) checkinModal.classList.add('hidden'); });
+
+    confirmCiBtn.addEventListener('click', () => {
+      checkinModal.classList.add('hidden');
+      showToast('Guest successfully checked in.');
+
+      // Update stat count
+      const statCi = document.getElementById('stat-checkin-count');
+      if (statCi) {
+        statCi.textContent = parseInt(statCi.textContent || '12', 10) + 1;
+      }
+
+      // Hide checked-in row
+      if (targetCiRow) {
+        targetCiRow.style.transition = 'opacity 0.3s';
+        targetCiRow.style.opacity = '0';
+        setTimeout(() => targetCiRow.remove(), 300);
+      }
+    });
+
+    // ── Check-out Flow Modal ──
+    const checkoutModal = document.getElementById('checkout-modal');
+    const closeCoBtn    = document.getElementById('close-checkout-modal');
+    const cancelCoBtn   = document.getElementById('btn-cancel-checkout');
+    const confirmCoBtn  = document.getElementById('btn-confirm-checkout');
+    let targetCoRow     = null;
+
+    document.querySelectorAll('.btn-trigger-checkout').forEach(btn => {
+      btn.addEventListener('click', function() {
+        targetCoRow = this.closest('tr');
+        const name = targetCoRow.querySelector('.font-bold.text-navy').textContent;
+        const room = targetCoRow.querySelector('td:nth-child(2)').textContent;
+
+        document.getElementById('co-name').textContent = name;
+        document.getElementById('co-room').textContent = room;
+        checkoutModal.classList.remove('hidden');
+      });
+    });
+
+    [closeCoBtn, cancelCoBtn].forEach(b => {
+      b.addEventListener('click', () => checkoutModal.classList.add('hidden'));
+    });
+    checkoutModal.addEventListener('click', e => { if (e.target === checkoutModal) checkoutModal.classList.add('hidden'); });
+
+    // Additional charges calculator
+    const minibarInput = document.getElementById('charge-minibar');
+    const laundryInput = document.getElementById('charge-laundry');
+    const sumAdd       = document.getElementById('sum-additional');
+    const sumTotal     = document.getElementById('sum-total');
+
+    function updateCheckoutTotal() {
+      const mb = parseInt(minibarInput.value || '0', 10);
+      const ld = parseInt(laundryInput.value || '0', 10);
+      const additional = mb + ld;
+      const roomCharge = 2500000;
+      const tax        = 285000;
+      const grandTotal = roomCharge + additional + tax;
+
+      sumAdd.textContent   = `Rp ${additional.toLocaleString('id-ID')}`;
+      sumTotal.textContent = `Rp ${grandTotal.toLocaleString('id-ID')}`;
+    }
+
+    if (minibarInput && laundryInput) {
+      minibarInput.addEventListener('input', updateCheckoutTotal);
+      laundryInput.addEventListener('input', updateCheckoutTotal);
+    }
+
+    confirmCoBtn.addEventListener('click', () => {
+      checkoutModal.classList.add('hidden');
+      showToast('Guest successfully checked out.');
+
+      // Update available rooms count
+      const statAvail = document.getElementById('stat-available-count');
+      if (statAvail) {
+        let val = parseInt(statAvail.textContent || '8', 10) + 1;
+        statAvail.textContent = val < 10 ? `0${val}` : val;
+      }
+
+      // Hide checked-out row
+      if (targetCoRow) {
+        targetCoRow.style.transition = 'opacity 0.3s';
+        targetCoRow.style.opacity = '0';
+        setTimeout(() => targetCoRow.remove(), 300);
+      }
+    });
+  </script>
+
+  <script>
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+</body>
+</html>

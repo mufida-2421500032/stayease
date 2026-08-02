@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard – StayEase Property Management</title>
+  <meta name="description" content="Pusat monitoring operasional hotel, analitik bisnis, dan statistik reservasi StayEase." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Chart.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:       '#0F2A44',
+            'navy-mid': '#1a3a5c',
+            gold:       '#C89A43',
+            'gold-light':'#F5E8C5',
+            page:       '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color: #F8F7F4; font-family: 'Inter', sans-serif; color: #1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-xl transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-bold text-white
+               bg-gold rounded-xl shadow-sm transition-all duration-150;
+      }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex bg-page">
+  <!-- Mobile Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+  <!-- ══════════════════════ TOAST NOTIFICATION ══════════════════════ -->
+  <div id="toast"
+       class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl
+              transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none">
+    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
+    <span id="toast-msg" class="text-[14px] font-semibold">Action completed successfully.</span>
+  </div>
+
+  <!-- ══════════════════════ EXPORT MODAL ══════════════════════ -->
+  <div id="export-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[400px] p-6">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
+        <h3 class="font-serif text-[18px] font-bold text-navy">Export Dashboard Data</h3>
+        <button id="close-export-modal" class="text-gray-400 hover:text-navy">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <p class="text-[13px] text-gray-500 mb-4">Pilih format berkas untuk mengekspor data laporan saat ini:</p>
+      <div class="space-y-2 mb-5">
+        <button onclick="triggerExport('PDF')" class="w-full flex items-center justify-between p-3 border border-gray-200 rounded-xl hover:bg-gray-50 text-[13px] font-semibold text-navy">
+          <span class="flex items-center gap-2.5"><i data-lucide="file-text" class="w-4 h-4 text-red-500"></i> Laporan PDF</span>
+          <i data-lucide="download" class="w-4 h-4 text-gray-400"></i>
+        </button>
+        <button onclick="triggerExport('Excel')" class="w-full flex items-center justify-between p-3 border border-gray-200 rounded-xl hover:bg-gray-50 text-[13px] font-semibold text-navy">
+          <span class="flex items-center gap-2.5"><i data-lucide="sheet" class="w-4 h-4 text-emerald-600"></i> Spreadsheet Excel (.xlsx)</span>
+          <i data-lucide="download" class="w-4 h-4 text-gray-400"></i>
+        </button>
+        <button onclick="triggerExport('CSV')" class="w-full flex items-center justify-between p-3 border border-gray-200 rounded-xl hover:bg-gray-50 text-[13px] font-semibold text-navy">
+          <span class="flex items-center gap-2.5"><i data-lucide="file-code" class="w-4 h-4 text-blue-600"></i> Format CSV (.csv)</span>
+          <i data-lucide="download" class="w-4 h-4 text-gray-400"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ SIDEBAR (ROLE ADMINISTRATOR) ══════════════════════ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[220px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+
+    <!-- Logo -->
+    <div class="px-6 pt-6 pb-5 border-b border-white/10">
+      <a href="admin-dashboard.html" class="block">
+        <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+        <span class="text-[10px] font-medium text-white/50 tracking-wider uppercase mt-1 block">Management Portal</span>
+      </a>
+    </div>
+
+    <!-- Nav Menu -->
+    <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto no-scrollbar">
+      <a href="admin-dashboard.html" class="sb-link-active" aria-current="page">
+        <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="admin-rooms.html" class="sb-link">
+        <i data-lucide="bed" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Rooms</span>
+      </a>
+      <a href="admin-room-types.html" class="sb-link">
+        <i data-lucide="layers" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Room Types</span>
+      </a>
+      <a href="admin-facilities.html" class="sb-link">
+        <i data-lucide="sparkles" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Facilities</span>
+      </a>
+      <a href="admin-receptionists.html" class="sb-link">
+        <i data-lucide="user-cog" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Receptionists</span>
+      </a>
+      <a href="admin-all-bookings.html" class="sb-link">
+        <i data-lucide="calendar" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>All Bookings</span>
+      </a>
+      <a href="#" onclick="showToast('Navigasi ke Laporan / Reports'); return false;" class="sb-link">
+        <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Reports</span>
+      </a>
+    </nav>
+
+    <!-- Bottom Menu -->
+    <div class="px-4 py-5 border-t border-white/10 space-y-1">
+      <a href="#" onclick="showToast('Menghubungkan ke Tim Support'); return false;"
+         class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="help-circle" class="w-4 h-4"></i>
+        <span>Support</span>
+      </a>
+      <a href="login.html"
+         class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[220px] flex flex-col min-h-screen w-full min-w-0">
+
+    <!-- Header Bar -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm flex-wrap lg:flex-nowrap">
+
+      <button id="mobile-menu-btn" class="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Sidebar Menu">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+
+      <!-- Search Bar -->
+      <div class="relative w-full max-w-md">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input id="header-search" type="text" placeholder="Search rooms, bookings, guests..."
+               class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 focus:ring-2 focus:ring-navy/10 transition-all" />
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-4">
+
+        <!-- Notification Center -->
+        <div class="relative">
+          <button id="btn-notif" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors relative">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+          </button>
+
+          <!-- Notification Dropdown Popover -->
+          <div id="notif-dropdown" class="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 py-3 hidden z-50">
+            <div class="px-4 pb-2 border-b border-gray-100 flex items-center justify-between">
+              <span class="font-serif font-bold text-navy text-[14px]">Notifications</span>
+              <span class="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">4 New</span>
+            </div>
+            <div class="divide-y divide-gray-50 max-h-64 overflow-y-auto text-[12px]">
+              <a href="#" class="block px-4 py-2.5 hover:bg-gray-50">
+                <div class="font-semibold text-navy">New booking created</div>
+                <div class="text-gray-400 text-[11px]">Booking #SE-2026-904 by Kemangi Ardana</div>
+              </a>
+              <a href="#" class="block px-4 py-2.5 hover:bg-gray-50">
+                <div class="font-semibold text-navy">Monthly report generated</div>
+                <div class="text-gray-400 text-[11px]">Laporan performa Juli 2026 siap diunduh</div>
+              </a>
+              <a href="#" class="block px-4 py-2.5 hover:bg-gray-50">
+                <div class="font-semibold text-navy">Receptionist account updated</div>
+                <div class="text-gray-400 text-[11px]">Profil Cengkeh Nirmala diperbarui</div>
+              </a>
+              <a href="#" class="block px-4 py-2.5 hover:bg-gray-50">
+                <div class="font-semibold text-navy text-amber-700">Room 205 marked unavailable</div>
+                <div class="text-gray-400 text-[11px]">Maintenance rutin pending AC</div>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Icon -->
+        <button onclick="showToast('Membuka Pengaturan Sistem');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Administrator Profile Dropdown -->
+        <div class="relative">
+          <button id="btn-profile" class="flex items-center gap-3 focus:outline-none group">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+                 alt="Merica Wibisono"
+                 class="w-9 h-9 rounded-full object-cover border-2 border-gold/40 shadow-sm" />
+            <div class="text-left hidden md:block">
+              <div class="text-[13px] font-bold text-navy leading-tight group-hover:text-gold transition-colors">Merica Wibisono</div>
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Administrator</span>
+            </div>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 group-hover:text-navy transition-colors"></i>
+          </button>
+
+          <!-- Profile Dropdown Menu -->
+          <div id="profile-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 hidden z-50 text-[13px]">
+            <a href="#" onclick="showToast('Profil Administrator'); return false;" class="flex items-center gap-2.5 px-4 py-2 text-gray-700 hover:bg-gray-50 font-medium">
+              <i data-lucide="user" class="w-4 h-4 text-gray-400"></i> My Profile
+            </a>
+            <a href="#" onclick="showToast('Pengaturan Akun'); return false;" class="flex items-center gap-2.5 px-4 py-2 text-gray-700 hover:bg-gray-50 font-medium">
+              <i data-lucide="sliders" class="w-4 h-4 text-gray-400"></i> Account Settings
+            </a>
+            <a href="#" onclick="showToast('Preferensi Sistem'); return false;" class="flex items-center gap-2.5 px-4 py-2 text-gray-700 hover:bg-gray-50 font-medium">
+              <i data-lucide="cog" class="w-4 h-4 text-gray-400"></i> System Preferences
+            </a>
+            <div class="border-t border-gray-100 my-1"></div>
+            <a href="login.html" class="flex items-center gap-2.5 px-4 py-2 text-red-600 hover:bg-red-50 font-medium">
+              <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 px-4 sm:px-8 py-7 max-w-[1240px] w-full overflow-x-hidden">
+
+      <!-- Page Title -->
+      <div class="mb-6">
+        <h1 class="font-serif text-[34px] font-bold text-navy leading-tight mb-1">Admin Dashboard</h1>
+        <p class="text-[15px] text-gray-500">Welcome back. Here is your property performance overview for today.</p>
+      </div>
+
+      <!-- ── 4 SUMMARY CARDS ── -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+
+        <!-- Card 1: Total Rooms -->
+        <div onclick="window.location.href='admin-rooms.html'"
+             class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">TOTAL KAMAR</span>
+              <div class="font-serif text-[34px] font-bold text-navy leading-none">50</div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-gold/10 flex items-center justify-center text-navy group-hover:text-gold transition-colors">
+              <i data-lucide="bed" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 text-[12px] text-emerald-600 font-semibold">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+            <span>Semua kamar beroperasi</span>
+          </div>
+        </div>
+
+        <!-- Card 2: Room Occupancy -->
+        <div onclick="window.location.href='#'"
+             class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">OKUPANSI KAMAR</span>
+              <div class="font-serif text-[34px] font-bold text-navy leading-none">85%</div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-gold/20 flex items-center justify-center text-gold transition-colors">
+              <i data-lucide="pie-chart" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <!-- Progress Bar -->
+          <div class="w-full bg-gray-100 rounded-full h-2 my-2 overflow-hidden">
+            <div class="bg-gold h-2 rounded-full transition-all duration-500" style="width: 85%"></div>
+          </div>
+          <div class="text-[12px] text-gray-400 font-medium">Rata-rata okupansi saat ini</div>
+        </div>
+
+        <!-- Card 3: Total Bookings -->
+        <div onclick="window.location.href='receptionist-reservations.html'"
+             class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">TOTAL BOOKING</span>
+              <div class="font-serif text-[34px] font-bold text-navy leading-none">124</div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-navy/10 flex items-center justify-center text-navy transition-colors">
+              <i data-lucide="calendar" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="text-[12px] text-gray-400 font-medium">Bulan ini (Des 2026)</div>
+        </div>
+
+        <!-- Card 4: Total Revenue -->
+        <div onclick="window.location.href='#'"
+             class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">TOTAL PENDAPATAN</span>
+              <div class="font-serif text-[30px] font-bold text-navy leading-none">Rp 450M</div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-gold/20 flex items-center justify-center text-gold transition-colors">
+              <i data-lucide="wallet" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 text-[12px] text-emerald-600 font-bold">
+            <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+            <span>+12% vs bulan lalu</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── BOOKING STATUS DISTRIBUTION CARD (LARGE CHART) ── -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-7">
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h3 class="font-serif text-[22px] font-bold text-navy leading-tight">Jumlah Booking per Status</h3>
+            <p class="text-[13px] text-gray-400 mt-0.5">Laporan distribusi status reservasi real-time</p>
+          </div>
+
+          <!-- Actions: Filter & Export -->
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <button id="btn-chart-filter"
+                      class="flex items-center gap-2 px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] font-semibold text-gray-700 hover:bg-gray-100 transition-colors">
+                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-gray-500"></i>
+                <span id="filter-label">This Month</span>
+                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400"></i>
+              </button>
+              <!-- Filter Dropdown -->
+              <div id="chart-filter-dropdown" class="absolute right-0 mt-1 w-40 bg-white rounded-xl shadow-lg border border-gray-100 py-1 hidden z-30 text-[13px]">
+                <button onclick="updateStatusFilter('Today')" class="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700 font-medium">Today</button>
+                <button onclick="updateStatusFilter('This Week')" class="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700 font-medium">This Week</button>
+                <button onclick="updateStatusFilter('This Month')" class="w-full text-left px-4 py-2 hover:bg-gray-50 text-navy font-bold">This Month</button>
+                <button onclick="updateStatusFilter('Custom Range')" class="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700 font-medium">Custom Range</button>
+              </div>
+            </div>
+
+            <button id="btn-open-export"
+                    class="flex items-center gap-2 px-4 py-2 bg-navy hover:bg-navy-mid text-white text-[13px] font-semibold rounded-xl transition-colors shadow-sm">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Export</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Chart Canvas -->
+        <div class="relative h-[280px] w-full">
+          <canvas id="bookingStatusChart"></canvas>
+        </div>
+      </div>
+
+      <!-- ── MIDDLE ROW: BOOKING TRENDS & LATEST ARRIVALS ── -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-7">
+
+        <!-- Booking Trends (2 cols) -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h3 class="font-serif text-[20px] font-bold text-navy">Booking Trends</h3>
+              <p class="text-[13px] text-gray-400 mt-0.5">Performance over the last 30 days</p>
+            </div>
+            <select id="trend-timeframe" onchange="updateTrendsChart(this.value)"
+                    class="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-[12px] font-semibold text-gray-700 focus:outline-none">
+              <option value="7">Last 7 Days</option>
+              <option value="30" selected>Last 30 Days</option>
+              <option value="180">Last 6 Months</option>
+              <option value="365">Last Year</option>
+            </select>
+          </div>
+
+          <!-- Trends Canvas -->
+          <div class="relative h-[230px] w-full">
+            <canvas id="bookingTrendsChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Latest Arrivals (1 col) -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="font-serif text-[20px] font-bold text-navy">Latest Arrivals</h3>
+            <a href="receptionist-checkin.html" class="text-[12px] font-bold text-gold hover:underline">View All</a>
+          </div>
+
+          <!-- Guests List -->
+          <div class="space-y-4">
+
+            <!-- Guest 1 -->
+            <div onclick="window.location.href='booking-confirmation.html'"
+                 class="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
+              <div class="flex items-center gap-3">
+                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=120&q=80"
+                     class="w-10 h-10 rounded-full object-cover border border-gold/40 flex-shrink-0" />
+                <div>
+                  <div class="font-bold text-navy text-[14px] flex items-center gap-1.5">
+                    Kemangi Ardana
+                    <span class="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.2 rounded uppercase">VIP</span>
+                  </div>
+                  <div class="text-[12px] text-gray-400">Checked-in • Suite 402</div>
+                </div>
+              </div>
+              <span class="text-[11px] text-gray-400 font-medium">2 mins ago</span>
+            </div>
+
+            <!-- Guest 2 -->
+            <div onclick="window.location.href='booking-confirmation.html'"
+                 class="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
+              <div class="flex items-center gap-3">
+                <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&q=80"
+                     class="w-10 h-10 rounded-full object-cover border border-gray-200 flex-shrink-0" />
+                <div>
+                  <div class="font-bold text-navy text-[14px]">Ketumbar Anindya</div>
+                  <div class="text-[12px] text-gray-400">Confirmed • Deluxe Double</div>
+                </div>
+              </div>
+              <span class="text-[11px] text-gray-400 font-medium">1 hr ago</span>
+            </div>
+
+            <!-- Guest 3 -->
+            <div onclick="window.location.href='booking-confirmation.html'"
+                 class="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
+              <div class="flex items-center gap-3">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80"
+                     class="w-10 h-10 rounded-full object-cover border border-gray-200 flex-shrink-0" />
+                <div>
+                  <div class="font-bold text-navy text-[14px]">Kapulaga Wirawan</div>
+                  <div class="text-[12px] text-gray-400">Checked-out • Exec Suite</div>
+                </div>
+              </div>
+              <span class="text-[11px] text-gray-400 font-medium">10 mins ago</span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── BOTTOM ROW: AKTIVITAS TERKINI & AKSI CEPAT / SERVER STATUS ── -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Aktivitas Terkini (2 cols) -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between">
+          <div>
+            <h3 class="font-serif text-[20px] font-bold text-navy mb-5">Aktivitas Terkini</h3>
+
+            <!-- Activity Items -->
+            <div class="space-y-4">
+
+              <!-- Item 1 -->
+              <div onclick="showToast('Detail Reservasi #ST-8829');"
+                   class="flex items-start gap-3.5 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+                <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <i data-lucide="check-circle" class="w-5 h-5"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="font-bold text-navy text-[14px]">Reservasi #ST-8829 dikonfirmasi</div>
+                  <p class="text-[12px] text-gray-500">Ketumbar Anindya — Suite Room — <span class="text-gray-400">10 menit yang lalu</span></p>
+                </div>
+              </div>
+
+              <!-- Item 2 -->
+              <div onclick="showToast('Detail Guest Room 204');"
+                   class="flex items-start gap-3.5 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <i data-lucide="log-in" class="w-5 h-5"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="font-bold text-navy text-[14px]">Guest Check in: Room 204</div>
+                  <p class="text-[12px] text-gray-500">Kemangi Ardana — Deluxe Room — <span class="text-gray-400">45 menit yang lalu</span></p>
+                </div>
+              </div>
+
+              <!-- Item 3 -->
+              <div onclick="showToast('Detail Pembatalan #ST-8812');"
+                   class="flex items-start gap-3.5 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+                <div class="w-9 h-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <i data-lucide="x-circle" class="w-5 h-5"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="font-bold text-navy text-[14px]">Reservasi #ST-8812 Dibatalkan</div>
+                  <p class="text-[12px] text-gray-500">Kapulaga Wirawan — Standard Room — <span class="text-gray-400">1 jam yang lalu</span></p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Bottom View All Button -->
+          <div class="mt-5 pt-4 border-t border-gray-100">
+            <button onclick="showToast('Menampilkan seluruh log aktivitas sistem...');"
+                    class="w-full py-2.5 border border-gray-200 text-navy font-bold text-[13px] rounded-xl hover:bg-gray-50 transition-colors">
+              Lihat Semua Aktivitas
+            </button>
+          </div>
+        </div>
+
+        <!-- Aksi Cepat & Server Status (1 col) -->
+        <div class="space-y-6">
+
+          <!-- Aksi Cepat & Status Server Card -->
+          <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-6">
+            <h3 class="text-[20px] font-bold text-navy">Aksi Cepat</h3>
+
+            <!-- 2 Buttons Row -->
+            <div class="grid grid-cols-2 gap-4">
+              <button onclick="window.location.href='admin-add-room.html'"
+                      class="flex flex-col items-center justify-center py-6 px-3 border border-gray-200/80 rounded-2xl hover:bg-gray-50 transition-colors text-center shadow-xs">
+                <i data-lucide="plus-circle" class="w-6 h-6 text-navy mb-2.5"></i>
+                <span class="text-[13px] font-bold text-navy">Add Room</span>
+              </button>
+
+              <button onclick="window.location.href='admin-receptionists.html'"
+                      class="flex flex-col items-center justify-center py-6 px-3 border border-gray-200/80 rounded-2xl hover:bg-gray-50 transition-colors text-center shadow-xs">
+                <i data-lucide="user-plus" class="w-6 h-6 text-navy mb-2.5"></i>
+                <span class="text-[13px] font-bold text-navy">New Account</span>
+              </button>
+            </div>
+
+            <!-- Server Status Box -->
+            <div class="bg-[#FFFDF8] rounded-2xl border border-amber-200/50 p-4">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-[#A37533] block mb-2">STATUS SERVER</span>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                <span class="text-[14px] font-bold text-navy">Operational</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-gray-100 py-4 px-8 text-center text-[12px] text-gray-400">
+      © 2026 StayEase Property Management System. All Rights Reserved.
+    </footer>
+  </div>
+
+  <!-- ══════════════════════ JAVASCRIPT ══════════════════════ -->
+  <script>
+    lucide.createIcons();
+
+    // ── Toast Helper ──
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-msg');
+    function showToast(msg) {
+      toastMsg.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      setTimeout(() => toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'), 3000);
+    }
+
+    // ── Profile & Notif Dropdowns ──
+    const btnProfile = document.getElementById('btn-profile');
+    const profileDropdown = document.getElementById('profile-dropdown');
+    btnProfile.addEventListener('click', (e) => {
+      e.stopPropagation();
+      profileDropdown.classList.toggle('hidden');
+      notifDropdown.classList.add('hidden');
+    });
+
+    const btnNotif = document.getElementById('btn-notif');
+    const notifDropdown = document.getElementById('notif-dropdown');
+    btnNotif.addEventListener('click', (e) => {
+      e.stopPropagation();
+      notifDropdown.classList.toggle('hidden');
+      profileDropdown.classList.add('hidden');
+    });
+
+    document.addEventListener('click', () => {
+      profileDropdown.classList.add('hidden');
+      notifDropdown.classList.add('hidden');
+      document.getElementById('chart-filter-dropdown').classList.add('hidden');
+    });
+
+    // ── Export Modal ──
+    const exportModal = document.getElementById('export-modal');
+    document.getElementById('btn-open-export').addEventListener('click', () => exportModal.classList.remove('hidden'));
+    document.getElementById('close-export-modal').addEventListener('click', () => exportModal.classList.add('hidden'));
+    exportModal.addEventListener('click', (e) => { if (e.target === exportModal) exportModal.classList.add('hidden'); });
+
+    function triggerExport(format) {
+      exportModal.classList.add('hidden');
+      showToast(`Mengunduh laporan dashboard format ${format}...`);
+    }
+
+    // ── Chart Filter Dropdown ──
+    const btnChartFilter = document.getElementById('btn-chart-filter');
+    const chartFilterDropdown = document.getElementById('chart-filter-dropdown');
+    btnChartFilter.addEventListener('click', (e) => {
+      e.stopPropagation();
+      chartFilterDropdown.classList.toggle('hidden');
+    });
+
+    function updateStatusFilter(label) {
+      document.getElementById('filter-label').textContent = label;
+      chartFilterDropdown.classList.add('hidden');
+      showToast(`Laporan diperbarui untuk rentang: ${label}`);
+      // Dynamic Chart Update
+      statusChart.data.datasets[0].data = label === 'Today' ? [2, 12, 8, 4, 1, 0] : [14, 58, 32, 15, 3, 2];
+      statusChart.update();
+    }
+
+    // ── CHART 1: Booking Status Distribution (Bar Chart) ──
+    const ctxStatus = document.getElementById('bookingStatusChart').getContext('2d');
+    const statusChart = new Chart(ctxStatus, {
+      type: 'bar',
+      data: {
+        labels: ['Pending', 'Confirmed', 'Checked In', 'Checked Out', 'Rejected', 'Cancelled'],
+        datasets: [{
+          label: 'Jumlah Reservasi',
+          data: [14, 58, 32, 15, 3, 2],
+          backgroundColor: [
+            '#F59E0B', // Pending - Amber
+            '#C89A43', // Confirmed - Gold
+            '#0F2A44', // Checked In - Navy
+            '#10B981', // Checked Out - Emerald
+            '#EF4444', // Rejected - Red
+            '#6B7280'  // Cancelled - Gray
+          ],
+          borderRadius: 8,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const val = context.raw;
+                const pct = ((val / total) * 100).toFixed(1);
+                return `${val} Bookings (${pct}%)`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: '#F3F4F6' }, beginAtZero: true }
+        },
+        onClick: (evt, activeEls) => {
+          if (activeEls.length > 0) {
+            const index = activeEls[0].index;
+            const label = statusChart.data.labels[index];
+            showToast(`Membuka daftar booking dengan status: ${label}`);
+            setTimeout(() => window.location.href = 'receptionist-reservations.html', 1000);
+          }
+        }
+      }
+    });
+
+    // ── CHART 2: Booking Trends (Dual Bar Chart) ──
+    const ctxTrends = document.getElementById('bookingTrendsChart').getContext('2d');
+    const trendsChart = new Chart(ctxTrends, {
+      type: 'bar',
+      data: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+          label: 'Bookings',
+          data: [12, 28, 14, 22, 25, 24, 10],
+          backgroundColor: ['#8B6914', '#8B6914', '#0F2A44', '#8B6914', '#0F2A44', '#8B6914', '#0F2A44'],
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: true }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: '#F3F4F6' }, beginAtZero: true }
+        }
+      }
+    });
+
+    function updateTrendsChart(days) {
+      showToast(`Booking Trends diperbarui untuk ${days} hari terakhir`);
+      if (days == '7') {
+        trendsChart.data.labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        trendsChart.data.datasets[0].data = [12, 28, 14, 22, 25, 24, 10];
+      } else if (days == '30') {
+        trendsChart.data.labels = ['W1', 'W2', 'W3', 'W4'];
+        trendsChart.data.datasets[0].data = [65, 82, 94, 105];
+      } else {
+        trendsChart.data.labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        trendsChart.data.datasets[0].data = [240, 310, 290, 420, 380, 490];
+      }
+      trendsChart.update();
+    }
+
+    // ── Search Listener ──
+    document.getElementById('header-search').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        showToast(`Mencari "${this.value}" di seluruh sistem...`);
+      }
+    });
+
+    // Mobile Sidebar Toggle
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+
+</body>
+</html>

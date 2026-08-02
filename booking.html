@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konfirmasi Reservasi Ã¢â‚¬â€œ StayEase</title>
+  <meta name="description" content="Konfirmasi reservasi kamar hotel StayEase Ã¢â‚¬â€ periksa rincian pemesanan Anda." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Tailwind custom config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:  '#183654',
+            gold:  '#C9974D',
+            'gold-dark': '#A37533',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  
+  <style type="text/tailwindcss">
+    @layer base {
+      html { scroll-behavior: smooth; }
+      body {
+        background-color: #F8F8F8;
+        font-family: 'Inter', sans-serif;
+        color: #1F2937;
+      }
+    }
+
+    @layer components {
+      .sidebar-link {
+        @apply flex items-center gap-3 px-4 py-3 text-[15px] font-medium text-gray-600 rounded-lg
+               hover:bg-gray-100 hover:text-navy transition-all duration-150 relative;
+      }
+      .sidebar-link-active {
+        @apply flex items-center gap-3 px-4 py-3 text-[15px] font-bold text-navy bg-gray-100 rounded-lg relative;
+      }
+      .sidebar-link-active::after {
+        content: '';
+        @apply absolute right-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-gold rounded-l;
+      }
+    }
+
+    @media (min-width: 768px) {
+      #hamburger-btn, #mobile-menu { display: none !important; }
+    }
+  </style>
+</head>
+
+<body class="antialiased bg-[#FAFAFA] min-h-screen flex">
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+  <!-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â SIDEBAR Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â -->
+      <aside id="sidebar"
+         class="fixed top-0 left-0 bottom-0 z-50 w-[260px] xl:w-[280px] bg-white border-r border-gray-200
+                flex flex-col justify-between p-6 transition-transform duration-300 lg:translate-x-0 -translate-x-full"
+         aria-label="Navigasi Utama Dashboard">
+
+    <!-- Top Section: Brand & Nav Links -->
+    <div>
+      <!-- Brand Logo -->
+      <div class="mb-10 pl-2">
+        <a href="index.html" class="block">
+          <span class="font-serif text-[32px] font-bold text-navy tracking-tight leading-none block">StayEase</span>
+          <span class="text-[13px] text-gray-500 font-normal tracking-wide block mt-1">Property Management</span>
+        </a>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="space-y-1.5" role="navigation" aria-label="Menu Sidebar">
+        <a href="customer-dashboard.html" class="sidebar-link" >
+          <i data-lucide="layout-grid" class="w-5 h-5 text-gray-500" aria-hidden="true"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="customer-rooms.html" class="sidebar-link-active" aria-current="page">
+          <i data-lucide="bed" class="w-5 h-5 text-navy" aria-hidden="true"></i>
+          <span>Rooms</span>
+        </a>
+        <a href="history.html" class="sidebar-link" >
+          <i data-lucide="history" class="w-5 h-5 text-gray-500" aria-hidden="true"></i>
+          <span>Riwayat</span>
+        </a>
+        <a href="settings.html" class="sidebar-link" >
+          <i data-lucide="settings" class="w-5 h-5 text-gray-500" aria-hidden="true"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Bottom Section: Logout -->
+    <div class="pt-6 border-t border-gray-100">
+      <a href="login.html" id="btn-logout" class="flex items-center gap-3 px-4 py-3 text-[15px] font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-5 h-5 text-red-500" aria-hidden="true"></i>
+        <span>Keluar</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â MAIN CONTENT WRAPPER Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[260px] xl:ml-[280px] flex flex-col min-h-screen min-w-0">
+
+    <!-- Top Header Bar -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm flex-wrap lg:flex-nowrap">
+      <div class="flex items-center gap-3 w-full lg:w-auto">
+        <button id="mobile-menu-btn" class="lg:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Menu">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <!-- Search Input Bar -->
+      <div class="relative w-full max-w-md">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input type="text" placeholder="Search for rooms or guests..."
+               class="w-full pl-10 pr-4 py-2 bg-gray-100/70 border border-transparent rounded-full text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/20 transition-all" />
+      </div>
+      </div>
+
+      <!-- Right Section: Notification, Help, Grid, Profile -->
+      <div class="flex items-center gap-3">
+        <button class="p-1.5 text-gray-500 hover:bg-gray-100 rounded-full relative">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+        </button>
+        <button class="p-1.5 text-gray-500 hover:bg-gray-100 rounded-full">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+        <button class="p-1.5 text-gray-500 hover:bg-gray-100 rounded-full">
+          <i data-lucide="grid" class="w-5 h-5"></i>
+        </button>
+
+        <div class="h-6 w-px bg-gray-200 mx-1"></div>
+
+        <div class="flex items-center gap-3">
+          <div class="text-right hidden sm:block">
+            <div class="text-[13px] font-bold text-navy leading-tight">Kemangi Ardana</div>
+            <span class="text-[10px] font-bold text-gold uppercase tracking-wider block">GOLD MEMBER</span>
+          </div>
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+               class="w-9 h-9 rounded-full object-cover border-2 border-gold/40 shadow-sm" alt="Profile" />
+        </div>
+      </div>
+    </header>
+
+    <!-- Workspace Content -->
+    <main class="flex-1 px-4 sm:px-6 lg:px-8 py-7 max-w-[1180px]">
+
+      <!-- Breadcrumbs -->
+      <nav class="flex items-center gap-1.5 text-[12px] text-gray-400 font-medium mb-4">
+        <a href="customer-rooms.html" class="hover:text-navy transition-colors">Rooms</a>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+        <a href="load-more-rooms.html" class="hover:text-navy transition-colors">Load More Rooms</a>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+        <a href="customer-room-detail.html" class="hover:text-navy transition-colors">Executive Suite</a>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+        <span class="text-navy font-bold">Konfirmasi Reservasi</span>
+      </nav>
+
+      <!-- Page Title Header -->
+      <div class="mb-7">
+        <h1 class="font-serif text-[32px] font-bold text-navy leading-tight mb-1">Konfirmasi Reservasi</h1>
+        <p class="text-[14px] text-gray-500">Review your booking details and complete the reservation for your upcoming stay.</p>
+      </div>
+
+      <!-- Two-Column Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-7 items-start mb-12">
+
+        <!-- LEFT COLUMN: Room Summary + Best Price Guaranteed -->
+        <div class="lg:col-span-5 space-y-5">
+
+          <!-- Card 1: Room Summary -->
+          <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+            <!-- Room Image -->
+            <div class="relative h-[240px]">
+              <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80"
+                   class="w-full h-full object-cover" alt="Executive Suite" />
+              <span class="absolute top-4 left-4 bg-gold/90 text-white font-bold text-[12px] px-3.5 py-1.5 rounded-full shadow-sm">
+                Featured Suite
+              </span>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-6">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <h2 class="font-serif text-[22px] font-bold text-navy leading-tight">Executive Suite</h2>
+                  <div class="flex items-center gap-1 text-[13px] text-gray-500 mt-1 font-medium">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-gray-400"></i>
+                    <span>Main Wing, 12th Floor</span>
+                  </div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <div class="font-serif text-[22px] font-bold text-gold leading-none">Rp 2.450.000</div>
+                  <span class="text-[11px] text-gray-400 mt-0.5 block">per malam</span>
+                </div>
+              </div>
+
+              <!-- Amenities Grid Boxes -->
+              <div class="grid grid-cols-3 gap-3 mt-6 pt-5 border-t border-gray-100">
+                <div class="bg-gray-100/70 rounded-xl py-3 px-2 text-center border border-gray-100 flex flex-col items-center justify-center gap-1">
+                  <i data-lucide="scale" class="w-4 h-4 text-navy"></i>
+                  <span class="text-[12px] font-bold text-navy">65 mÃ‚Â²</span>
+                </div>
+                <div class="bg-gray-100/70 rounded-xl py-3 px-2 text-center border border-gray-100 flex flex-col items-center justify-center gap-1">
+                  <i data-lucide="wifi" class="w-4 h-4 text-navy"></i>
+                  <span class="text-[12px] font-bold text-navy">Free Wifi</span>
+                </div>
+                <div class="bg-gray-100/70 rounded-xl py-3 px-2 text-center border border-gray-100 flex flex-col items-center justify-center gap-1">
+                  <i data-lucide="coffee" class="w-4 h-4 text-navy"></i>
+                  <span class="text-[12px] font-bold text-navy">Breakfast</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Best Price Guaranteed Card -->
+          <div class="bg-[#FAF5EC] rounded-2xl p-5 border border-[#EEDCBE] shadow-sm flex items-start gap-4">
+            <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-gold shadow-sm flex-shrink-0 border border-[#EEDCBE]/60">
+              <i data-lucide="award" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-[15px] text-[#8C6422] mb-1">Best Price Guaranteed</h3>
+              <p class="text-[12.5px] text-[#9E7836] leading-relaxed">
+                Booking directly with StayEase ensures you get the most exclusive rates and priority room upgrades.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Informasi Pemesanan Form -->
+        <div class="lg:col-span-7 bg-white rounded-2xl p-7 border border-gray-100 shadow-sm space-y-6">
+
+          <h2 class="font-serif text-[22px] font-bold text-navy">Informasi Pemesanan</h2>
+
+          <!-- Form Fields Grid (2x2) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <!-- Check-in Date -->
+            <div>
+              <label class="block text-[13px] font-bold text-navy mb-1.5">Tanggal Check-in</label>
+              <div class="relative">
+                <input type="text" value="08/07/2026" readonly
+                       class="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13.5px] font-semibold text-gray-800 focus:outline-none cursor-pointer" />
+                <i data-lucide="calendar" class="w-4 h-4 text-gray-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              </div>
+            </div>
+
+            <!-- Check-out Date -->
+            <div>
+              <label class="block text-[13px] font-bold text-navy mb-1.5">Tanggal Check-out</label>
+              <div class="relative">
+                <input type="text" value="11/07/2026" readonly
+                       class="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13.5px] font-semibold text-gray-800 focus:outline-none cursor-pointer" />
+                <i data-lucide="calendar" class="w-4 h-4 text-gray-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              </div>
+            </div>
+
+            <!-- Jumlah Tamu -->
+            <div>
+              <label class="block text-[13px] font-bold text-navy mb-1.5">Jumlah Tamu</label>
+              <div class="relative">
+                <select class="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13.5px] font-semibold text-gray-800 focus:outline-none appearance-none cursor-pointer">
+                  <option value="2-0">2 Dewasa, 0 Anak</option>
+                  <option value="1-0">1 Dewasa, 0 Anak</option>
+                  <option value="2-1">2 Dewasa, 1 Anak</option>
+                  <option value="3-0">3 Dewasa, 0 Anak</option>
+                </select>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              </div>
+            </div>
+
+            <!-- Permintaan Khusus -->
+            <div>
+              <label class="block text-[13px] font-bold text-navy mb-1.5">Permintaan Khusus</label>
+              <input type="text" placeholder="e.g. Lantai atas, quiet room" value="e.g. Lantai atas, quiet room"
+                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13.5px] text-gray-700 placeholder-gray-400 focus:outline-none focus:border-navy" />
+            </div>
+
+          </div>
+
+          <!-- Price Summary Calculation Box -->
+          <div class="bg-[#F3F4F6] rounded-2xl p-5 space-y-3">
+            <div class="flex items-center justify-between text-[13.5px]">
+              <span class="text-gray-600">Jumlah Malam:</span>
+              <span class="font-bold text-gray-900 text-[14px]">3 malam</span>
+            </div>
+            <div class="flex items-center justify-between text-[13.5px]">
+              <span class="text-gray-600">Harga Dasar (Rp 2.450.000 Ãƒâ€” 3):</span>
+              <span class="font-semibold text-gray-800">Rp 7.350.000</span>
+            </div>
+            <div class="flex items-center justify-between text-[13.5px]">
+              <span class="text-gray-600">Pajak & Layanan (10%):</span>
+              <span class="font-semibold text-gray-800">Rp 735.000</span>
+            </div>
+
+            <div class="border-t border-gray-300/70 pt-3 flex items-center justify-between">
+              <span class="font-bold text-navy text-[16px]">Total Harga:</span>
+              <span class="font-serif text-[24px] font-bold text-gold">Rp 8.085.000</span>
+            </div>
+          </div>
+
+          <!-- Red Warning Notice Box -->
+          <div class="bg-red-50 border border-red-200/80 rounded-2xl p-4 flex items-start gap-3">
+            <i data-lucide="info" class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"></i>
+            <p class="text-[12.5px] text-red-800 font-medium leading-relaxed">
+              Kamar ini hanya dapat dipesan jika belum ada booking aktif pada rentang tanggal yang sama. Harap pastikan kembali ketersediaan jadwal Anda.
+            </p>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="pt-2 space-y-3">
+            <button id="btn-confirm-booking" type="button"
+                    class="w-full py-4 bg-navy hover:bg-[#10273d] text-white font-semibold text-[16px] rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
+                    onclick="window.location.href='booking-details.html'">
+              <span>Konfirmasi Booking</span>
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+            <p class="text-center text-[12px] text-gray-500">
+              Dengan mengklik konfirmasi, Anda menyetujui <a href="#" onclick="alert('Syarat & Ketentuan StayEase'); return false;" class="underline font-semibold text-gray-700 hover:text-navy">Syarat & Ketentuan</a> kami.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Page Footer -->
+    <footer class="border-t border-gray-200/70 py-5 px-8 text-[12px] text-gray-500 flex flex-col sm:flex-row items-center justify-between gap-3 mt-auto bg-white">
+      <div>Ã‚Â© 2023 StayEase Property Management System. All rights reserved.</div>
+      <div class="flex items-center gap-5 font-medium">
+        <a href="#" onclick="alert('Privacy Policy'); return false;" class="hover:text-navy transition-colors">Privacy Policy</a>
+        <a href="#" onclick="alert('Support Center'); return false;" class="hover:text-navy transition-colors">Support Center</a>
+        <a href="#" onclick="alert('Contact Us'); return false;" class="hover:text-navy transition-colors">Contact Us</a>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // Mobile Sidebar Toggle
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.add('open'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+</body>
+</html>
+
+
+

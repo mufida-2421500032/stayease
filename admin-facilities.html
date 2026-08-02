@@ -1,0 +1,666 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Hotel Facilities – StayEase Property Management</title>
+  <meta name="description" content="Kelola daftar fasilitas yang tersedia untuk tamu properti Anda." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:       '#0B2E4F',
+            'navy-mid': '#1a3a5c',
+            gold:       '#D8A23A',
+            'gold-dark':'#B8882A',
+            page:       '#FAFAFA',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color: #FAFAFA; font-family: 'Inter', sans-serif; color: #1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-xl transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-bold text-white
+               bg-gold rounded-xl shadow-sm transition-all duration-150;
+      }
+    }
+  </style>
+
+  <style>
+    /* Facility Card Hover Effects */
+    .facility-card {
+      transition: transform 250ms ease, box-shadow 250ms ease, border-color 250ms ease;
+    }
+    .facility-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 16px 32px rgba(11, 46, 79, 0.08);
+    }
+    .facility-card:hover .accent-border {
+      background-color: #F5C258;
+    }
+    .facility-card:hover .icon-box {
+      transform: scale(1.05);
+    }
+    .icon-box {
+      transition: transform 250ms ease;
+    }
+
+    /* Action button hover */
+    .action-btn-edit:hover {
+      background-color: #D8A23A;
+      color: white;
+      border-color: #D8A23A;
+    }
+    .action-btn-delete:hover {
+      background-color: #EF4444;
+      color: white;
+      border-color: #EF4444;
+    }
+
+    /* Empty State Hover */
+    .empty-facility-card:hover {
+      border-color: #D8A23A;
+      background-color: #FFFCF5;
+    }
+    .empty-facility-card:hover .empty-icon {
+      color: #D8A23A;
+    }
+
+    /* Animation on page load */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeInUp 0.4s ease both; }
+    .delay-1 { animation-delay: 0.05s; }
+    .delay-2 { animation-delay: 0.1s; }
+    .delay-3 { animation-delay: 0.15s; }
+    .delay-4 { animation-delay: 0.2s; }
+    .delay-5 { animation-delay: 0.25s; }
+    .delay-6 { animation-delay: 0.3s; }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex bg-page">
+  <!-- Mobile Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+  <!-- ══════════ TOAST NOTIFICATION ══════════ -->
+  <div id="toast"
+       class="fixed top-6 right-6 z-[100] flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl
+              transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none">
+    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
+    <span id="toast-msg" class="text-[14px] font-semibold">Tindakan berhasil dilaksanakan.</span>
+  </div>
+
+  <!-- ══════════ ADD/EDIT FACILITY MODAL ══════════ -->
+  <div id="modal-facility" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[20px] shadow-2xl w-full max-w-[540px] overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="bg-navy px-6 py-4 flex items-center justify-between">
+        <h3 id="fac-modal-title" class="font-serif text-[20px] font-bold text-gold">Tambah Fasilitas Hotel</h3>
+        <button id="close-fac-modal" class="p-1 hover:bg-white/10 rounded-lg text-white transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-facility" class="p-6 space-y-4 overflow-y-auto no-scrollbar">
+        <!-- Facility Name -->
+        <div>
+          <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Nama Fasilitas <span class="text-red-500">*</span></label>
+          <input type="text" id="fac-name" required placeholder="Contoh: Kolam Renang Outdoor"
+                 class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] font-medium text-gray-800 focus:outline-none focus:border-navy focus:bg-white transition-all" />
+        </div>
+
+        <!-- Category & Icon -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Kategori <span class="text-red-500">*</span></label>
+            <select id="fac-category" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] font-medium text-gray-800 focus:outline-none focus:border-navy focus:bg-white transition-all">
+              <option value="Rekreasi">Rekreasi</option>
+              <option value="Kesehatan">Kesehatan</option>
+              <option value="Relaksasi">Relaksasi</option>
+              <option value="Kuliner">Kuliner</option>
+              <option value="Konektivitas">Konektivitas</option>
+              <option value="Layanan">Layanan</option>
+              <option value="Parkir">Parkir</option>
+              <option value="Hiburan">Hiburan</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Icon <span class="text-red-500">*</span></label>
+            <select id="fac-icon" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] font-medium text-gray-800 focus:outline-none focus:border-navy focus:bg-white transition-all">
+              <option value="waves">🏊 Outdoor Pool (waves)</option>
+              <option value="dumb-bell">🏋 Gym (dumb-bell)</option>
+              <option value="sparkles">🧖 Spa (sparkles)</option>
+              <option value="utensils">🍽 Restaurant (utensils)</option>
+              <option value="wifi">📶 WiFi (wifi)</option>
+              <option value="parking">🅿 Parking (parking)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Deskripsi (Opsional)</label>
+          <textarea id="fac-desc" rows="2" placeholder="Jelaskan detail fasilitas secara singkat..."
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 focus:outline-none focus:border-navy focus:bg-white transition-all resize-none"></textarea>
+        </div>
+
+        <!-- Availability Options -->
+        <div>
+          <label class="block text-[13px] font-bold text-gray-700 mb-2">Ketersediaan Akses</label>
+          <div class="space-y-2 text-[13px] text-gray-700">
+            <label class="flex items-center gap-2.5 cursor-pointer">
+              <input type="radio" name="fac-access" value="all" checked class="w-4 h-4 accent-navy" />
+              <span>Dapat diakses seluruh tamu hotel</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer">
+              <input type="radio" name="fac-access" value="premium" class="w-4 h-4 accent-navy" />
+              <span>Khusus tamu VIP / Premium</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer">
+              <input type="radio" name="fac-access" value="room-specific" class="w-4 h-4 accent-navy" />
+              <span>Terhubung dengan tipe kamar tertentu</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Status Toggle -->
+        <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+          <span class="text-[13px] font-bold text-gray-700">Status Fasilitas</span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="fac-status" checked class="sr-only peer" />
+            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+            <span id="fac-status-text" class="ml-2.5 text-[13px] font-bold text-emerald-600">Active</span>
+          </label>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-3 pt-3 border-t border-gray-100">
+          <button type="button" id="btn-cancel-fac"
+                  class="px-5 py-2.5 border border-navy text-navy font-bold text-[13px] rounded-xl hover:bg-navy/5 transition-colors">
+            Batal
+          </button>
+          <button type="submit"
+                  class="flex items-center gap-2 px-6 py-2.5 bg-navy hover:bg-navy-mid text-white text-[13px] font-bold rounded-xl shadow-md transition-colors">
+            <i data-lucide="save" class="w-4 h-4"></i> Simpan Fasilitas
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════════ DELETE CONFIRMATION MODAL ══════════ -->
+  <div id="delete-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[20px] shadow-2xl w-full max-w-[420px] p-6">
+      <div class="flex items-start gap-4 mb-5">
+        <div class="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="trash-2" class="w-5 h-5 text-red-600"></i>
+        </div>
+        <div>
+          <h3 class="font-serif text-[18px] font-bold text-navy mb-1">Delete Facility</h3>
+          <p class="text-[13px] text-gray-500 leading-relaxed">Are you sure you want to remove <strong id="del-fac-name" class="text-navy">"Kolam Renang Outdoor"</strong>?</p>
+        </div>
+      </div>
+      <!-- Warning box -->
+      <div id="del-fac-warning" class="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 hidden">
+        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+        <p class="text-[12px] text-amber-800 font-medium leading-relaxed">This facility cannot be deleted if it is currently assigned to one or more room types.</p>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button id="btn-cancel-del" class="px-4 py-2.5 text-[13px] font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
+        <button id="btn-confirm-del" class="px-5 py-2.5 text-[13px] font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl flex items-center gap-1.5 shadow-sm transition-colors">
+          <i data-lucide="trash" class="w-4 h-4"></i> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[220px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 pt-6 pb-5 border-b border-white/10">
+      <a href="admin-dashboard.html" class="block">
+        <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+        <span class="text-[10px] font-medium text-white/50 tracking-wider uppercase mt-1 block">Management Portal</span>
+      </a>
+    </div>
+
+    <!-- Nav Menu -->
+    <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto no-scrollbar">
+      <a href="admin-dashboard.html" class="sb-link">
+        <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="admin-rooms.html" class="sb-link">
+        <i data-lucide="bed" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Rooms</span>
+      </a>
+      <a href="admin-room-types.html" class="sb-link">
+        <i data-lucide="layers" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Room Types</span>
+      </a>
+      <a href="admin-facilities.html" class="sb-link-active" aria-current="page">
+        <i data-lucide="sparkles" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Facilities</span>
+      </a>
+      <a href="admin-receptionists.html" class="sb-link">
+        <i data-lucide="user-cog" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Receptionist</span>
+      </a>
+      <a href="admin-all-bookings.html" class="sb-link">
+        <i data-lucide="calendar" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>All Bookings</span>
+      </a>
+      <a href="admin-reports.html" class="sb-link">
+        <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Reports</span>
+      </a>
+    </nav>
+
+    <!-- Bottom Menu -->
+    <div class="px-4 py-5 border-t border-white/10 space-y-1">
+      <a href="#" onclick="showToast('Support'); return false;" class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="help-circle" class="w-4 h-4"></i>
+        <span>Support</span>
+      </a>
+      <a href="login.html" class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[220px] flex flex-col min-h-screen w-full">
+
+    <!-- Header Bar -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm flex-wrap lg:flex-nowrap">
+      
+      <button id="mobile-menu-btn" class="lg:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Menu">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+      </button>
+      <!-- Search Bar -->
+      <div class="relative w-full max-w-sm">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input id="search-input" type="text" placeholder="Search facilities..."
+               class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 transition-all" />
+      </div>
+
+      <!-- Right Header -->
+      <div class="flex items-center gap-3 ml-auto">
+        <button onclick="showToast('Notifikasi Terbaru');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+        </button>
+        <button onclick="showToast('Pengaturan Sistem');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+        <div class="h-6 w-px bg-gray-200"></div>
+        <div class="flex items-center gap-3">
+          <div class="text-right hidden sm:block">
+            <div class="text-[13px] font-bold text-navy leading-tight">Merica Wibisono</div>
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">ADMINISTRATOR</span>
+          </div>
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+               class="w-9 h-9 rounded-full object-cover border-2 border-gold/40 shadow-sm" alt="Merica Wibisono" />
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 px-4 sm:px-8 py-8 max-w-[1240px] w-full overflow-x-hidden">
+
+      <!-- Title & Action Row -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 class="font-serif text-[36px] font-bold text-navy leading-tight mb-1">Manajemen Fasilitas Hotel</h1>
+          <p class="text-[15px] text-gray-500">Kelola daftar fasilitas yang tersedia untuk tamu properti Anda.</p>
+        </div>
+        <button id="btn-add-facility"
+                class="flex items-center px-6 py-3 bg-gold-dark hover:bg-gold text-white font-bold text-[14px] rounded-xl shadow-md transition-colors flex-shrink-0">
+          + Tambah Fasilitas
+        </button>
+      </div>
+
+      <!-- Facility Cards Grid (2 Columns, 110-120px height) -->
+      <div id="facility-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-7 mb-8">
+
+        <!-- ── CARD 1: Kolam Renang Outdoor ── -->
+        <div class="facility-card relative bg-white rounded-[18px] border border-[#ECECEC] shadow-sm flex items-center justify-between p-4 h-[115px] overflow-hidden fade-in delay-1 cursor-pointer"
+             onclick="showToast('Membuka Detail Kolam Renang Outdoor')"
+             data-name="kolam renang outdoor outdoor swimming pool" data-cat="rekreasi">
+          <!-- Left Gold Accent Border -->
+          <div class="accent-border absolute left-0 top-0 bottom-0 w-[5px] bg-gold rounded-l-[18px] transition-colors"></div>
+
+          <div class="flex items-center gap-4 pl-2">
+            <!-- Icon Container (52x52px) -->
+            <div class="icon-box w-[52px] h-[52px] rounded-[12px] bg-gray-100/80 flex items-center justify-center text-navy flex-shrink-0">
+              <i data-lucide="waves" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-[17px] font-bold text-navy leading-snug">Kolam Renang Outdoor</h3>
+              <p class="text-[13px] text-gray-400 mt-0.5 font-medium">Kategori: Rekreasi</p>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+            <button onclick="openEditModal('Kolam Renang Outdoor', 'Rekreasi', 'waves')"
+                    class="action-btn-edit w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 transition-all"
+                    title="Edit">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </button>
+            <button onclick="openDeleteModal('Kolam Renang Outdoor', false)"
+                    class="action-btn-delete w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-red-500 transition-all"
+                    title="Delete">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── CARD 2: Pusat Kebugaran ── -->
+        <div class="facility-card relative bg-white rounded-[18px] border border-[#ECECEC] shadow-sm flex items-center justify-between p-4 h-[115px] overflow-hidden fade-in delay-2 cursor-pointer"
+             onclick="showToast('Membuka Detail Pusat Kebugaran')"
+             data-name="pusat kebugaran gym center fitness" data-cat="kesehatan">
+          <div class="accent-border absolute left-0 top-0 bottom-0 w-[5px] bg-gold rounded-l-[18px] transition-colors"></div>
+
+          <div class="flex items-center gap-4 pl-2">
+            <div class="icon-box w-[52px] h-[52px] rounded-[12px] bg-gray-100/80 flex items-center justify-center text-navy flex-shrink-0">
+              <i data-lucide="dumb-bell" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-[17px] font-bold text-navy leading-snug">Pusat Kebugaran</h3>
+              <p class="text-[13px] text-gray-400 mt-0.5 font-medium">Kategori: Kesehatan</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+            <button onclick="openEditModal('Pusat Kebugaran', 'Kesehatan', 'dumb-bell')"
+                    class="action-btn-edit w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 transition-all">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </button>
+            <button onclick="openDeleteModal('Pusat Kebugaran', false)"
+                    class="action-btn-delete w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-red-500 transition-all">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── CARD 3: Luxe Spa & Wellness ── -->
+        <div class="facility-card relative bg-white rounded-[18px] border border-[#ECECEC] shadow-sm flex items-center justify-between p-4 h-[115px] overflow-hidden fade-in delay-3 cursor-pointer"
+             onclick="showToast('Membuka Detail Luxe Spa & Wellness')"
+             data-name="luxe spa & wellness relaksasi" data-cat="relaksasi">
+          <div class="accent-border absolute left-0 top-0 bottom-0 w-[5px] bg-gold rounded-l-[18px] transition-colors"></div>
+
+          <div class="flex items-center gap-4 pl-2">
+            <div class="icon-box w-[52px] h-[52px] rounded-[12px] bg-gray-100/80 flex items-center justify-center text-navy flex-shrink-0">
+              <i data-lucide="sparkles" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-[17px] font-bold text-navy leading-snug">Luxe Spa & Wellness</h3>
+              <p class="text-[13px] text-gray-400 mt-0.5 font-medium">Kategori: Relaksasi</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+            <button onclick="openEditModal('Luxe Spa & Wellness', 'Relaksasi', 'sparkles')"
+                    class="action-btn-edit w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 transition-all">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </button>
+            <button onclick="openDeleteModal('Luxe Spa & Wellness', true)"
+                    class="action-btn-delete w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-red-500 transition-all">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── CARD 4: Restoran Fine Dining ── -->
+        <div class="facility-card relative bg-white rounded-[18px] border border-[#ECECEC] shadow-sm flex items-center justify-between p-4 h-[115px] overflow-hidden fade-in delay-4 cursor-pointer"
+             onclick="showToast('Membuka Detail Restoran Fine Dining')"
+             data-name="restoran fine dining restaurant kuliner" data-cat="kuliner">
+          <div class="accent-border absolute left-0 top-0 bottom-0 w-[5px] bg-gold rounded-l-[18px] transition-colors"></div>
+
+          <div class="flex items-center gap-4 pl-2">
+            <div class="icon-box w-[52px] h-[52px] rounded-[12px] bg-gray-100/80 flex items-center justify-center text-navy flex-shrink-0">
+              <i data-lucide="utensils" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-[17px] font-bold text-navy leading-snug">Restoran Fine Dining</h3>
+              <p class="text-[13px] text-gray-400 mt-0.5 font-medium">Kategori: Kuliner</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+            <button onclick="openEditModal('Restoran Fine Dining', 'Kuliner', 'utensils')"
+                    class="action-btn-edit w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 transition-all">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </button>
+            <button onclick="openDeleteModal('Restoran Fine Dining', false)"
+                    class="action-btn-delete w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-red-500 transition-all">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── CARD 5: High-Speed WiFi ── -->
+        <div class="facility-card relative bg-white rounded-[18px] border border-[#ECECEC] shadow-sm flex items-center justify-between p-4 h-[115px] overflow-hidden fade-in delay-5 cursor-pointer"
+             onclick="showToast('Membuka Detail High-Speed WiFi')"
+             data-name="high-speed wifi internet konektivitas" data-cat="konektivitas">
+          <div class="accent-border absolute left-0 top-0 bottom-0 w-[5px] bg-gold rounded-l-[18px] transition-colors"></div>
+
+          <div class="flex items-center gap-4 pl-2">
+            <div class="icon-box w-[52px] h-[52px] rounded-[12px] bg-gray-100/80 flex items-center justify-center text-navy flex-shrink-0">
+              <i data-lucide="wifi" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-[17px] font-bold text-navy leading-snug">High-Speed WiFi</h3>
+              <p class="text-[13px] text-gray-400 mt-0.5 font-medium">Kategori: Konektivitas</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+            <button onclick="openEditModal('High-Speed WiFi', 'Konektivitas', 'wifi')"
+                    class="action-btn-edit w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 transition-all">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </button>
+            <button onclick="openDeleteModal('High-Speed WiFi', true)"
+                    class="action-btn-delete w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-red-500 transition-all">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── CARD 6: Parkir Valet 24 Jam ── -->
+        <div class="facility-card relative bg-white rounded-[18px] border border-[#ECECEC] shadow-sm flex items-center justify-between p-4 h-[115px] overflow-hidden fade-in delay-6 cursor-pointer"
+             onclick="showToast('Membuka Detail Parkir Valet 24 Jam')"
+             data-name="parkir valet 24 jam parking layanan" data-cat="layanan">
+          <div class="accent-border absolute left-0 top-0 bottom-0 w-[5px] bg-gold rounded-l-[18px] transition-colors"></div>
+
+          <div class="flex items-center gap-4 pl-2">
+            <div class="icon-box w-[52px] h-[52px] rounded-[12px] bg-gray-100/80 flex items-center justify-center text-navy flex-shrink-0">
+              <span class="font-bold text-[20px] text-navy">P</span>
+            </div>
+            <div>
+              <h3 class="text-[17px] font-bold text-navy leading-snug">Parkir Valet 24 Jam</h3>
+              <p class="text-[13px] text-gray-400 mt-0.5 font-medium">Kategori: Layanan</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+            <button onclick="openEditModal('Parkir Valet 24 Jam', 'Layanan', 'parking')"
+                    class="action-btn-edit w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 transition-all">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </button>
+            <button onclick="openDeleteModal('Parkir Valet 24 Jam', false)"
+                    class="action-btn-delete w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-red-500 transition-all">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /#facility-grid -->
+
+      <!-- ── EMPTY STATE CARD AT BOTTOM ── -->
+      <div id="empty-state-card"
+           onclick="openAddModal()"
+           class="empty-facility-card border-2 border-dashed border-gray-300 rounded-[20px] p-8
+                  flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-250 fade-in delay-6">
+        <div class="empty-icon w-12 h-12 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 mb-3 transition-colors">
+          <i data-lucide="package-plus" class="w-6 h-6"></i>
+        </div>
+        <p class="text-[14px] font-medium text-gray-500">Butuh fasilitas tambahan? Klik tombol di atas.</p>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════ JAVASCRIPT ══════════ -->
+  <script>
+    lucide.createIcons();
+
+    // Toast
+    function showToast(msg) {
+      document.getElementById('toast-msg').textContent = msg;
+      const t = document.getElementById('toast');
+      t.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'), 3000);
+    }
+
+    // Modal Add / Edit Facility
+    const facModal = document.getElementById('modal-facility');
+    const facTitle = document.getElementById('fac-modal-title');
+    let isEdit = false;
+
+    function openAddModal() {
+      isEdit = false;
+      facTitle.textContent = 'Tambah Fasilitas Hotel';
+      document.getElementById('form-facility').reset();
+      facModal.classList.remove('hidden');
+    }
+
+    function openEditModal(name, cat, icon) {
+      isEdit = true;
+      facTitle.textContent = 'Edit Fasilitas Hotel';
+      document.getElementById('fac-name').value = name;
+      document.getElementById('fac-category').value = cat;
+      document.getElementById('fac-icon').value = icon;
+      facModal.classList.remove('hidden');
+    }
+
+    document.getElementById('btn-add-facility').addEventListener('click', openAddModal);
+    document.getElementById('close-fac-modal').addEventListener('click', () => facModal.classList.add('hidden'));
+    document.getElementById('btn-cancel-fac').addEventListener('click', () => facModal.classList.add('hidden'));
+    facModal.addEventListener('click', e => { if (e.target === facModal) facModal.classList.add('hidden'); });
+
+    // Status toggle sync
+    const facStatus = document.getElementById('fac-status');
+    const facStatusText = document.getElementById('fac-status-text');
+    facStatus.addEventListener('change', function() {
+      if (this.checked) {
+        facStatusText.textContent = 'Active';
+        facStatusText.className = 'ml-2.5 text-[13px] font-bold text-emerald-600';
+      } else {
+        facStatusText.textContent = 'Inactive';
+        facStatusText.className = 'ml-2.5 text-[13px] font-bold text-gray-400';
+      }
+    });
+
+    document.getElementById('form-facility').addEventListener('submit', e => {
+      e.preventDefault();
+      facModal.classList.add('hidden');
+      showToast(isEdit ? '✅ Fasilitas berhasil diperbarui.' : '✅ Fasilitas baru berhasil ditambahkan.');
+    });
+
+    // Delete Modal
+    const delModal = document.getElementById('delete-modal');
+    let delTarget = '';
+
+    function openDeleteModal(name, isAssigned) {
+      delTarget = name;
+      document.getElementById('del-fac-name').textContent = `"${name}"`;
+      const warning = document.getElementById('del-fac-warning');
+      const confirmBtn = document.getElementById('btn-confirm-del');
+
+      if (isAssigned) {
+        warning.classList.remove('hidden');
+        confirmBtn.disabled = true;
+        confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        warning.classList.add('hidden');
+        confirmBtn.disabled = false;
+        confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+      delModal.classList.remove('hidden');
+    }
+
+    document.getElementById('btn-cancel-del').addEventListener('click', () => delModal.classList.add('hidden'));
+    delModal.addEventListener('click', e => { if (e.target === delModal) delModal.classList.add('hidden'); });
+
+    document.getElementById('btn-confirm-del').addEventListener('click', () => {
+      if (document.getElementById('btn-confirm-del').disabled) return;
+      delModal.classList.add('hidden');
+      showToast(`✅ Fasilitas "${delTarget}" berhasil dihapus.`);
+    });
+
+    // Realtime Search
+    const searchInput = document.getElementById('search-input');
+    const facCards = document.querySelectorAll('.facility-card');
+
+    searchInput.addEventListener('input', function() {
+      const q = this.value.toLowerCase().trim();
+      facCards.forEach(card => {
+        const text = card.getAttribute('data-search') || '';
+        if (!q || text.includes(q)) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+
+    // Mobile Sidebar Toggle
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,750 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guest Profiles – StayEase Property Management</title>
+  <meta name="description" content="Manage relationships and preferences for valued guests on StayEase Property Management." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:        '#0F2A44',
+            'navy-mid':  '#1a3a5c',
+            'navy-card': '#0B2E4F',
+            gold:        '#C89A43',
+            'gold-light':'#F5E8C5',
+            'gold-badge':'#D8A23A',
+            page:        '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color:#F8F7F4; font-family:'Inter',sans-serif; color:#1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display:none; }
+      .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-lg transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-semibold text-white
+               bg-white/10 rounded-lg border-l-[3px] border-gold;
+      }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex bg-page">
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+  <!-- ══════════════════════ TOAST NOTIFICATION ══════════════════════ -->
+  <div id="toast" class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-[-20px] opacity-0 pointer-events-none">
+    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+    <span id="toast-msg" class="text-[14px] font-semibold">Guest successfully registered.</span>
+  </div>
+
+  <!-- ══════════════════════ REGISTER NEW GUEST MODAL ══════════════════════ -->
+  <div id="register-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[620px] overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-navy px-6 py-4 flex items-center justify-between text-white">
+        <div>
+          <h3 class="font-serif text-[20px] font-bold text-gold">Register New Guest</h3>
+          <p class="text-[12px] text-white/70">Create a new guest profile & loyalty record.</p>
+        </div>
+        <button id="close-reg-modal" class="p-1 hover:bg-white/10 rounded-lg transition-colors text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-register-guest" class="p-6 overflow-y-auto space-y-4 text-[14px]">
+        <div>
+          <label class="block text-[13px] font-medium text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
+          <input required type="text" id="reg-name" placeholder="e.g. Elena Kuznetsov" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[13px] font-medium text-gray-700 mb-1">Email</label>
+            <input type="email" id="reg-email" placeholder="guest@email.com" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-[13px] font-medium text-gray-700 mb-1">Phone Number <span class="text-red-500">*</span></label>
+            <input required type="tel" id="reg-phone" placeholder="+62 812 3456 7890" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:outline-none" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[13px] font-medium text-gray-700 mb-1">Gender</label>
+            <select id="reg-gender" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:outline-none">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[13px] font-medium text-gray-700 mb-1">Nationality</label>
+            <input type="text" id="reg-nationality" placeholder="Indonesian / Foreigner" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:outline-none" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[13px] font-medium text-gray-700 mb-1">Identity Number (KTP/Passport)</label>
+            <input type="text" id="reg-identity" placeholder="3171000202920001" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-[13px] font-medium text-gray-700 mb-1">Membership Status</label>
+            <select id="reg-membership" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:outline-none">
+              <option value="Bronze">Bronze</option>
+              <option value="Silver">Silver</option>
+              <option value="Gold">Gold</option>
+              <option value="Platinum">Platinum</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[13px] font-medium text-gray-700 mb-1">Preferences & Notes</label>
+          <textarea id="reg-notes" rows="2" placeholder="e.g. High floor, Non-smoking..." class="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 focus:bg-white focus:outline-none"></textarea>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-xl flex justify-end gap-3 border-t border-gray-100 mt-4">
+          <button type="button" id="btn-cancel-reg" class="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-semibold rounded-xl hover:bg-gray-100 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 bg-navy text-white text-[13px] font-semibold rounded-xl hover:bg-navy-mid transition-colors shadow-sm">
+            Save Guest
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ FULL HISTORY MODAL ══════════════════════ -->
+  <div id="history-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[680px] overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-navy px-6 py-4 flex items-center justify-between text-white">
+        <div>
+          <h3 id="hist-modal-title" class="font-serif text-[20px] font-bold text-gold">Full Stay History – Kemangi Ardana</h3>
+          <p class="text-[12px] text-white/70">Complete past stay records & transaction history.</p>
+        </div>
+        <button id="close-hist-modal" class="p-1 hover:bg-white/10 rounded-lg transition-colors text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-4 text-[14px]">
+        <div class="divide-y divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden">
+          <div class="p-4 bg-gray-50 flex justify-between items-center">
+            <div>
+              <div class="font-bold text-navy">Juli 12 – Juli 15, 2026</div>
+              <div class="text-[12px] text-gray-500">Presidential Suite • Room 1402</div>
+            </div>
+            <div class="text-right">
+              <div class="font-bold text-navy">Rp 25.500.000</div>
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Completed</span>
+            </div>
+          </div>
+          <div class="p-4 flex justify-between items-center">
+            <div>
+              <div class="font-bold text-navy">Juli 04 – Juli 09, 2026</div>
+              <div class="text-[12px] text-gray-500">Executive King • Room 804</div>
+            </div>
+            <div class="text-right">
+              <div class="font-bold text-navy">Rp 12.750.000</div>
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Completed</span>
+            </div>
+          </div>
+          <div class="p-4 bg-gray-50 flex justify-between items-center">
+            <div>
+              <div class="font-bold text-navy">Juni 18 – Juni 21, 2026</div>
+              <div class="text-[12px] text-gray-500">Deluxe Room • Room 304</div>
+            </div>
+            <div class="text-right">
+              <div class="font-bold text-navy">Rp 6.375.000</div>
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Completed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 px-6 py-4 flex justify-end">
+        <button id="btn-close-hist" class="px-5 py-2 bg-navy text-white text-[13px] font-semibold rounded-xl hover:bg-navy-mid transition-colors">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[215px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+
+    <!-- Logo -->
+    <div class="px-6 pt-6 pb-5 border-b border-white/10">
+      <a href="receptionist-dashboard.html" class="block">
+        <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+      </a>
+    </div>
+
+    <!-- Profile -->
+    <div class="px-5 py-4 border-b border-white/10 flex items-center gap-3">
+      <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
+           alt="Cengkeh Nirmala"
+           class="w-10 h-10 rounded-full object-cover border-2 border-gold/30 flex-shrink-0" />
+      <div class="min-w-0">
+        <div class="text-[13px] font-semibold text-white leading-tight truncate">Cengkeh Nirmala</div>
+        <span class="text-[10px] font-bold text-navy bg-gold px-2 py-0.5 rounded-full mt-1 inline-block tracking-wide">
+          Receptionist
+        </span>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto no-scrollbar">
+      <a href="receptionist-dashboard.html" class="sb-link">
+        <i data-lucide="layout-dashboard" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="receptionist-incoming-bookings.html" class="sb-link">
+        <i data-lucide="calendar-clock" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Incoming Bookings</span>
+      </a>
+      <a href="receptionist-reservations.html" class="sb-link">
+        <i data-lucide="clipboard-list" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Reservations</span>
+      </a>
+      <a href="receptionist-checkin.html" class="sb-link">
+        <i data-lucide="key" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Check-in / Check-out</span>
+      </a>
+      <a href="receptionist-guests.html" class="sb-link-active" aria-current="page">
+        <i data-lucide="users" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Guest</span>
+      </a>
+      <a href="receptionist-customers.html" class="sb-link">
+        <i data-lucide="user-check" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Customer Data</span>
+      </a>
+    </nav>
+
+    <!-- Bottom -->
+    <div class="px-4 py-5 border-t border-white/10">
+      <a href="login.html"
+         class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Log Out</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[215px] flex flex-col min-h-screen">
+
+    <!-- ============================================================
+         STICKY TOPBAR (MOBILE HAMBURGER)
+    ============================================================ -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 lg:hidden shadow-sm">
+      <button id="mobile-menu-btn" class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Sidebar Menu">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+      <span class="font-serif text-[18px] font-bold text-navy">StayEase</span>
+    </header>
+
+
+    <!-- Header Bar -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm">
+      <!-- Search Bar -->
+      <div class="relative w-full max-w-md">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input id="header-search"
+               type="text"
+               placeholder="Search guests by name or ID..."
+               class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 focus:ring-2 focus:ring-navy/10 transition-all" />
+      </div>
+
+      <!-- Header Icons -->
+      <div class="flex items-center gap-2">
+        <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors relative" aria-label="Notifications">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+        </button>
+        <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors" aria-label="Help Center">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+        <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors" aria-label="Applications Menu">
+          <i data-lucide="grid" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 px-8 py-7 max-w-[1240px]">
+
+      <!-- Title & Action Button Row -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 class="font-serif text-[34px] font-bold text-navy leading-tight mb-1">Guest Profiles</h1>
+          <p class="text-[15px] text-gray-500">Manage relationships and preferences for your most valued visitors.</p>
+        </div>
+        <a href="receptionist-register-guest.html"
+           class="flex items-center gap-2 px-5 py-3 bg-navy hover:bg-navy-mid text-white font-bold text-[13px] tracking-wider uppercase rounded-xl transition-colors shadow-md flex-shrink-0">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span>REGISTER NEW GUEST</span>
+        </a>
+      </div>
+
+      <!-- ── GUEST FILTER PILLS ── -->
+      <div class="flex items-center gap-2 overflow-x-auto mb-6 pb-1" id="filter-pills">
+        <button class="pill-btn px-4 py-2 rounded-full text-[13px] font-bold bg-navy text-white transition-all shadow-sm" data-filter="all">
+          All Guests
+        </button>
+        <button class="pill-btn px-4 py-2 rounded-full text-[13px] font-semibold bg-[#EAECEF] text-gray-700 hover:bg-gray-200 transition-all" data-filter="gold">
+          Gold Members
+        </button>
+        <button class="pill-btn px-4 py-2 rounded-full text-[13px] font-semibold bg-[#EAECEF] text-gray-700 hover:bg-gray-200 transition-all" data-filter="frequent">
+          Frequent Visitors
+        </button>
+        <button class="pill-btn px-4 py-2 rounded-full text-[13px] font-semibold bg-[#EAECEF] text-gray-700 hover:bg-gray-200 transition-all" data-filter="in-house">
+          In-House Now
+        </button>
+      </div>
+
+      <!-- ── 2-COLUMN LAYOUT ── -->
+      <div class="flex gap-6 items-start">
+
+        <!-- ═══ KOLOM KIRI (≈63%): GUEST LIST CARD ═══ -->
+        <div class="flex-1 min-w-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between min-h-[580px]">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left min-w-[540px]">
+              <thead>
+                <tr class="border-b border-gray-100 bg-gray-50/50">
+                  <th class="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">GUEST INFORMATION</th>
+                  <th class="py-4 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">LOYALTY</th>
+                  <th class="py-4 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">STAYS</th>
+                  <th class="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="guest-table-body" class="divide-y divide-gray-50 text-[14px]">
+
+                <!-- Row 1: Kemangi Ardana -->
+                <tr class="hover:bg-gray-50/60 transition-colors guest-row active-row"
+                    data-name="Kemangi Ardana"
+                    data-title="Senior VP, Vortex Global"
+                    data-[#img]="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80"
+                    data-loyalty="GOLD ELITE"
+                    data-stays="42"
+                    data-value="$18,450"
+                    data-inhouse="true"
+                    data-search="kemangi ardana kemangi@vortex-global.com gold">
+                  <td class="py-4 px-6">
+                    <div class="flex items-center gap-3.5">
+                      <div class="relative flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
+                             alt="Kemangi Ardana"
+                             class="w-11 h-11 rounded-xl object-cover border border-gray-200" />
+                        <!-- Green online indicator -->
+                        <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white"></span>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="font-bold text-navy leading-snug truncate">Kemangi Ardana</div>
+                        <div class="text-[12px] text-gray-400 truncate">kemangi@vortex-global.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-4 px-5">
+                    <span class="bg-[#F7EBC6] text-[#8B6914] text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">GOLD</span>
+                  </td>
+                  <td class="py-4 px-5 font-bold text-navy">42</td>
+                  <td class="py-4 px-6 text-right">
+                    <button class="btn-view-guest text-[12px] font-bold text-gold hover:underline tracking-wider uppercase">
+                      VIEW DETAILS
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 2: Paprika Elvano -->
+                <tr class="hover:bg-gray-50/60 transition-colors guest-row"
+                    data-name="Paprika Elvano"
+                    data-title="Creative Director, Creative Co"
+                    data-img="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"
+                    data-loyalty="SILVER"
+                    data-stays="18"
+                    data-value="$8,200"
+                    data-inhouse="false"
+                    data-search="paprika elvano paprika@creative.co silver">
+                  <td class="py-4 px-6">
+                    <div class="flex items-center gap-3.5">
+                      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+                           alt="Paprika Elvano"
+                           class="w-11 h-11 rounded-xl object-cover border border-gray-200 flex-shrink-0" />
+                      <div class="min-w-0">
+                        <div class="font-bold text-navy leading-snug truncate">Paprika Elvano</div>
+                        <div class="text-[12px] text-gray-400 truncate">paprika@creative.co</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-4 px-5">
+                    <span class="bg-[#E2E8F0] text-gray-700 text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">SILVER</span>
+                  </td>
+                  <td class="py-4 px-5 font-bold text-navy">18</td>
+                  <td class="py-4 px-6 text-right">
+                    <button class="btn-view-guest text-[12px] font-bold text-navy hover:underline tracking-wider uppercase">
+                      VIEW DETAILS
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 3: Kapulaga Wirawan -->
+                <tr class="hover:bg-gray-50/60 transition-colors guest-row"
+                    data-name="Kapulaga Wirawan"
+                    data-title="Tech Lead, Techflow.io"
+                    data-img="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80"
+                    data-loyalty="BRONZE"
+                    data-stays="6"
+                    data-value="$3,100"
+                    data-inhouse="false"
+                    data-search="kapulaga wirawan kapulaga@techflow.io bronze">
+                  <td class="py-4 px-6">
+                    <div class="flex items-center gap-3.5">
+                      <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+                           alt="Kapulaga Wirawan"
+                           class="w-11 h-11 rounded-xl object-cover border border-gray-200 flex-shrink-0" />
+                      <div class="min-w-0">
+                        <div class="font-bold text-navy leading-snug truncate">Kapulaga Wirawan</div>
+                        <div class="text-[12px] text-gray-400 truncate">kapulaga@techflow.io</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-4 px-5">
+                    <span class="bg-[#F3E2D4] text-[#8C5228] text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">BRONZE</span>
+                  </td>
+                  <td class="py-4 px-5 font-bold text-navy">6</td>
+                  <td class="py-4 px-6 text-right">
+                    <button class="btn-view-guest text-[12px] font-bold text-navy hover:underline tracking-wider uppercase">
+                      VIEW DETAILS
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 4: Erlangga Pala -->
+                <tr class="hover:bg-gray-50/60 transition-colors guest-row"
+                    data-name="Erlangga Pala"
+                    data-title="Lead Architect, Designers.es"
+                    data-img="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80"
+                    data-loyalty="SILVER"
+                    data-stays="12"
+                    data-value="$5,600"
+                    data-inhouse="false"
+                    data-search="erlangga pala erlangga@designers.es silver">
+                  <td class="py-4 px-6">
+                    <div class="flex items-center gap-3.5">
+                      <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80"
+                           alt="Erlangga Pala"
+                           class="w-11 h-11 rounded-xl object-cover border border-gray-200 flex-shrink-0" />
+                      <div class="min-w-0">
+                        <div class="font-bold text-navy leading-snug truncate">Erlangga Pala</div>
+                        <div class="text-[12px] text-gray-400 truncate">erlangga@designers.es</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-4 px-5">
+                    <span class="bg-[#E2E8F0] text-gray-700 text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">SILVER</span>
+                  </td>
+                  <td class="py-4 px-5 font-bold text-navy">12</td>
+                  <td class="py-4 px-6 text-right">
+                    <button class="btn-view-guest text-[12px] font-bold text-navy hover:underline tracking-wider uppercase">
+                      VIEW DETAILS
+                    </button>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Table Footer -->
+          <div class="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/30">
+            <p id="showing-text" class="text-[13px] text-gray-500">Showing 1-4 of 1,284 guests</p>
+            <div class="flex items-center gap-1.5">
+              <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-100 transition-colors">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-100 transition-colors">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ KOLOM KANAN (≈37%): GUEST PROFILE CARD & NOTES ═══ -->
+        <div class="flex flex-col gap-6" style="flex: 0 0 350px;">
+
+          <!-- Guest Profile Card -->
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <!-- Top Banner Header -->
+            <div class="bg-navy p-6 flex items-start justify-between relative">
+              <div class="relative">
+                <img id="detail-photo"
+                     src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80"
+                     alt="Kemangi Ardana"
+                     class="w-20 h-20 rounded-2xl object-cover border-2 border-white/20 shadow-md" />
+                <span id="detail-badge" class="absolute -bottom-2 -right-2 bg-[#D8A23A] text-navy text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shadow">
+                  GOLD ELITE
+                </span>
+              </div>
+            </div>
+
+            <!-- Profile Info Body -->
+            <div class="px-6 pt-5 pb-6">
+              <div class="flex items-start justify-between mb-5">
+                <div>
+                  <h3 id="detail-name" class="font-serif text-[22px] font-bold text-navy leading-tight">Kemangi Ardana</h3>
+                  <p id="detail-title" class="text-[13px] text-gray-500 mt-0.5">Senior VP, Vortex Global</p>
+                </div>
+                <button class="text-gray-400 hover:text-navy transition-colors p-1" aria-label="Edit Profile">
+                  <i data-lucide="edit-3" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+              <!-- Guest Statistics Mini Cards -->
+              <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-[#F8F9FA] rounded-xl p-3.5 border border-gray-100">
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">TOTAL STAYS</div>
+                  <div id="detail-stays" class="font-serif text-[22px] font-bold text-navy">42</div>
+                </div>
+                <div class="bg-[#F8F9FA] rounded-xl p-3.5 border border-gray-100">
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">LIFETIME VALUE</div>
+                  <div id="detail-value" class="font-serif text-[22px] font-bold text-navy">$18,450</div>
+                </div>
+              </div>
+
+              <!-- Stay Preferences -->
+              <div class="mb-6">
+                <div class="flex items-center gap-1.5 mb-3">
+                  <h4 class="text-[12px] font-bold uppercase tracking-wider text-gray-400">STAY PREFERENCES</h4>
+                  <i data-lucide="star" class="w-3.5 h-3.5 text-gold fill-gold"></i>
+                </div>
+                <div class="space-y-2">
+                  <div class="bg-[#F8F9FA] rounded-xl p-3 border border-gray-100 flex items-center gap-3 text-[13px] text-gray-700">
+                    <i data-lucide="moon" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+                    <span>Extra down pillows (4)</span>
+                  </div>
+                  <div class="bg-[#F8F9FA] rounded-xl p-3 border border-gray-100 flex items-center gap-3 text-[13px] text-gray-700">
+                    <i data-lucide="building" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+                    <span>High floor, corner room preferred</span>
+                  </div>
+                  <div class="bg-[#F8F9FA] rounded-xl p-3 border border-gray-100 flex items-center gap-3 text-[13px] text-gray-700">
+                    <i data-lucide="coffee" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+                    <span>Nespresso refills (Dark roast)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recent Stays -->
+              <div class="mb-6">
+                <h4 class="text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-3">RECENT STAYS</h4>
+                <div class="space-y-3 divide-y divide-gray-100">
+                  <div class="flex items-center justify-between pt-1">
+                    <div>
+                      <div class="font-bold text-[13px] text-navy">Juli 12 - Juli 15, 2026</div>
+                      <div class="text-[12px] text-gray-400">Presidential Suite • Room 1402</div>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+                  </div>
+                  <div class="flex items-center justify-between pt-3">
+                    <div>
+                      <div class="font-bold text-[13px] text-navy">Juli 04 - Juli 09, 2026</div>
+                      <div class="text-[12px] text-gray-400">Executive King • Room 804</div>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Button View Full History -->
+              <button id="btn-open-history" type="button"
+                      class="w-full text-center font-bold text-[12px] tracking-wider text-gold hover:underline uppercase pt-2">
+                VIEW FULL HISTORY
+              </button>
+            </div>
+          </div>
+
+          <!-- Concierge Notes Card -->
+          <div class="bg-[#F4F4F4] rounded-2xl p-5 border border-gray-200/60 shadow-sm space-y-3">
+            <h3 class="text-[12px] font-bold uppercase tracking-wider text-gray-500">CONCIERGE NOTES</h3>
+            <textarea id="concierge-text"
+                      rows="3"
+                      placeholder="Add a private note about this guest..."
+                      class="w-full px-3.5 py-3 bg-white border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:border-navy/30 transition-all">
+            </textarea>
+            <button id="btn-save-note" type="button"
+                    class="w-full bg-navy hover:bg-navy-mid text-white font-bold text-[12px] tracking-wider uppercase py-3 rounded-xl transition-colors shadow">
+              SAVE NOTE
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════ JAVASCRIPT ══════════════════════ -->
+  <script>
+    lucide.createIcons();
+
+    // ── Toast Helper ──
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-msg');
+
+    function showToast(msg) {
+      toastMsg.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      }, 3000);
+    }
+
+    // ── Register New Guest Modal ──
+    const regModal   = document.getElementById('register-modal');
+    const btnOpenReg = document.getElementById('btn-open-register');
+    const closeReg   = document.getElementById('close-reg-modal');
+    const cancelReg  = document.getElementById('btn-cancel-reg');
+    const formReg    = document.getElementById('form-register-guest');
+
+    btnOpenReg.addEventListener('click', () => regModal.classList.remove('hidden'));
+    [closeReg, cancelReg].forEach(b => b.addEventListener('click', () => regModal.classList.add('hidden')));
+    regModal.addEventListener('click', e => { if (e.target === regModal) regModal.classList.add('hidden'); });
+
+    formReg.addEventListener('submit', function(e) {
+      e.preventDefault();
+      regModal.classList.add('hidden');
+      showToast('Guest successfully registered.');
+      formReg.reset();
+    });
+
+    // ── Full History Modal ──
+    const histModal   = document.getElementById('history-modal');
+    const btnOpenHist = document.getElementById('btn-open-history');
+    const closeHist   = document.getElementById('close-hist-modal');
+    const btnCloseHist= document.getElementById('btn-close-hist');
+
+    btnOpenHist.addEventListener('click', () => histModal.classList.remove('hidden'));
+    [closeHist, btnCloseHist].forEach(b => b.addEventListener('click', () => histModal.classList.add('hidden')));
+    histModal.addEventListener('click', e => { if (e.target === histModal) histModal.classList.add('hidden'); });
+
+    // ── Concierge Notes Save ──
+    document.getElementById('btn-save-note').addEventListener('click', () => {
+      showToast('Concierge note successfully saved.');
+    });
+
+    // ── View Details & Dynamic Panel Update ──
+    const guestRows    = document.querySelectorAll('.guest-row');
+    const detailPhoto  = document.getElementById('detail-photo');
+    const detailBadge  = document.getElementById('detail-badge');
+    const detailName   = document.getElementById('detail-name');
+    const detailTitle  = document.getElementById('detail-title');
+    const detailStays  = document.getElementById('detail-stays');
+    const detailValue  = document.getElementById('detail-value');
+    const histTitle    = document.getElementById('hist-modal-title');
+
+    guestRows.forEach(row => {
+      row.addEventListener('click', function() {
+        const name    = this.getAttribute('data-name');
+        const title   = this.getAttribute('data-title');
+        const img     = this.getAttribute('data-img');
+        const loyalty = this.getAttribute('data-loyalty');
+        const stays   = this.getAttribute('data-stays');
+        const value   = this.getAttribute('data-value');
+
+        detailPhoto.src         = img;
+        detailBadge.textContent = loyalty;
+        detailName.textContent  = name;
+        detailTitle.textContent = title;
+        detailStays.textContent = stays;
+        detailValue.textContent = value;
+        histTitle.textContent   = `Full Stay History – ${name}`;
+      });
+    });
+
+    // ── Filter Pills & Header Search ──
+    const pillBtns    = document.querySelectorAll('.pill-btn');
+    const headerSearch= document.getElementById('header-search');
+    let currentFilter = 'all';
+
+    pillBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        pillBtns.forEach(b => {
+          b.className = 'pill-btn px-4 py-2 rounded-full text-[13px] font-semibold bg-[#EAECEF] text-gray-700 hover:bg-gray-200 transition-all';
+        });
+        this.className = 'pill-btn px-4 py-2 rounded-full text-[13px] font-bold bg-navy text-white transition-all shadow-sm';
+        currentFilter = this.getAttribute('data-filter');
+        applyGuestFilter();
+      });
+    });
+
+    headerSearch.addEventListener('input', applyGuestFilter);
+
+    function applyGuestFilter() {
+      const q = headerSearch.value.toLowerCase().trim();
+      let visible = 0;
+
+      guestRows.forEach(row => {
+        const searchData = row.getAttribute('data-search') || '';
+        const inHouse    = row.getAttribute('data-inhouse') === 'true';
+
+        let matchPill = true;
+        if (currentFilter === 'gold') matchPill = searchData.includes('gold');
+        if (currentFilter === 'frequent') matchPill = parseInt(row.getAttribute('data-stays') || '0', 10) >= 15;
+        if (currentFilter === 'in-house') matchPill = inHouse;
+
+        const matchQuery = (!q || searchData.includes(q));
+
+        if (matchPill && matchQuery) {
+          row.style.display = '';
+          visible++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      document.getElementById('showing-text').textContent = `Showing 1-${visible} of 1,284 guests`;
+    }
+  </script>
+
+  <script>
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+</body>
+</html>

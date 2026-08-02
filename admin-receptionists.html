@@ -1,0 +1,556 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manajemen Akun Resepsionis – StayEase Property Management</title>
+  <meta name="description" content="Kelola akses, profil, dan kredensial tim operasional hotel Anda." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:       '#0F2A44',
+            'navy-mid': '#1a3a5c',
+            gold:       '#C89A43',
+            'gold-dark':'#8C6B27',
+            page:       '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color: #F8F7F4; font-family: 'Inter', sans-serif; color: #1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-xl transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-bold text-white
+               bg-gold rounded-xl shadow-sm transition-all duration-150;
+      }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex bg-page">
+  <!-- Mobile Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+  <!-- ══════════ TOAST NOTIFICATION ══════════ -->
+  <div id="toast"
+       class="fixed top-6 right-6 z-[100] flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl
+              transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none">
+    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
+    <span id="toast-msg" class="text-[14px] font-semibold">Tindakan berhasil dilaksanakan.</span>
+  </div>
+
+  <!-- ══════════ CREATE / EDIT RECEPTIONIST MODAL / PAGE SIMULATION ══════════ -->
+  <div id="modal-create-receptionist" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[20px] shadow-2xl w-full max-w-[540px] overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="bg-navy px-6 py-4 flex items-center justify-between">
+        <h3 id="form-title" class="font-serif text-[20px] font-bold text-gold">Tambah Akun Receptionist</h3>
+        <button id="close-create-modal" class="p-1 hover:bg-white/10 rounded-lg text-white transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-receptionist-create" class="p-6 space-y-4 overflow-y-auto no-scrollbar">
+        <!-- Nama Lengkap -->
+        <div>
+          <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Nama Lengkap <span class="text-red-500">*</span></label>
+          <input type="text" id="input-fullname" required placeholder="Contoh: Ketumbar Anindya"
+                 class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] font-medium text-gray-800 focus:outline-none focus:border-navy focus:bg-white transition-all" />
+        </div>
+
+        <!-- Email & No Telepon -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Email <span class="text-red-500">*</span></label>
+            <input type="email" id="input-email" required placeholder="ketumbar@stayease.com"
+                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] font-medium text-gray-800 focus:outline-none focus:border-navy focus:bg-white transition-all" />
+          </div>
+          <div>
+            <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Nomor Telepon <span class="text-red-500">*</span></label>
+            <input type="tel" id="input-phone" required placeholder="+62 812 3456 7890"
+                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] font-medium text-gray-800 focus:outline-none focus:border-navy focus:bg-white transition-all" />
+          </div>
+        </div>
+
+        <!-- Username -->
+        <div>
+          <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Username <span class="text-red-500">*</span></label>
+          <input type="text" id="input-username" required placeholder="ketumbar_anindya"
+                 class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] font-medium text-gray-800 focus:outline-none focus:border-navy focus:bg-white transition-all" />
+        </div>
+
+        <!-- Password & Konfirmasi Password -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Password <span class="text-red-500">*</span></label>
+            <input type="password" id="input-password" required placeholder="••••••••"
+                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] font-medium text-gray-800 focus:outline-none focus:border-navy focus:bg-white transition-all" />
+          </div>
+          <div>
+            <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Konfirmasi Password <span class="text-red-500">*</span></label>
+            <input type="password" id="input-confirm-password" required placeholder="••••••••"
+                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] font-medium text-gray-800 focus:outline-none focus:border-navy focus:bg-white transition-all" />
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div>
+          <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Status <span class="text-red-500">*</span></label>
+          <select id="input-status" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] font-medium text-gray-800 focus:outline-none focus:border-navy focus:bg-white transition-all">
+            <option value="Aktif" selected>Aktif</option>
+            <option value="Nonaktif">Nonaktif</option>
+          </select>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+          <button type="button" id="btn-cancel-create"
+                  class="px-5 py-2.5 border border-navy text-navy font-bold text-[13px] rounded-xl hover:bg-navy/5 transition-colors">
+            Batal
+          </button>
+          <button type="submit"
+                  class="flex items-center gap-2 px-6 py-2.5 bg-navy hover:bg-navy-mid text-white text-[13px] font-bold rounded-xl shadow-md transition-colors">
+            <i data-lucide="save" class="w-4 h-4"></i> Simpan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════════ DELETE CONFIRMATION MODAL ══════════ -->
+  <div id="delete-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[20px] shadow-2xl w-full max-w-[420px] p-6">
+      <div class="flex items-start gap-4 mb-5">
+        <div class="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="trash-2" class="w-5 h-5 text-red-600"></i>
+        </div>
+        <div>
+          <h3 class="font-serif text-[18px] font-bold text-navy mb-1">Hapus akun receptionist?</h3>
+          <p class="text-[13px] text-gray-500 leading-relaxed">Data tidak dapat dikembalikan.</p>
+        </div>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button id="btn-cancel-del" class="px-4 py-2.5 text-[13px] font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
+        <button id="btn-confirm-del" class="px-5 py-2.5 text-[13px] font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl flex items-center gap-1.5 shadow-sm transition-colors">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[220px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 pt-6 pb-5 border-b border-white/10">
+      <a href="admin-dashboard.html" class="block">
+        <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+        <span class="text-[10px] font-medium text-white/50 tracking-wider uppercase mt-1 block">MANAGEMENT PORTAL</span>
+      </a>
+    </div>
+
+    <!-- Nav Menu -->
+    <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto no-scrollbar">
+      <a href="admin-dashboard.html" class="sb-link">
+        <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="admin-rooms.html" class="sb-link">
+        <i data-lucide="bed" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Rooms</span>
+      </a>
+      <a href="admin-room-types.html" class="sb-link">
+        <i data-lucide="layers" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Room Types</span>
+      </a>
+      <a href="admin-facilities.html" class="sb-link">
+        <i data-lucide="sparkles" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Facilities</span>
+      </a>
+      <a href="admin-receptionists.html" class="sb-link-active" aria-current="page">
+        <i data-lucide="user-cog" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Receptionist</span>
+      </a>
+      <a href="admin-all-bookings.html" class="sb-link">
+        <i data-lucide="calendar" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>All Bookings</span>
+      </a>
+      <a href="admin-reports.html" class="sb-link">
+        <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Reports</span>
+      </a>
+    </nav>
+
+    <!-- Bottom Menu -->
+    <div class="px-4 py-5 border-t border-white/10 space-y-1">
+      <a href="#" onclick="showToast('Support'); return false;" class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="help-circle" class="w-4 h-4"></i>
+        <span>Support</span>
+      </a>
+      <a href="login.html" class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[220px] flex flex-col min-h-screen w-full">
+
+    <!-- Top Navigation -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm flex-wrap lg:flex-nowrap">
+      
+      <button id="mobile-menu-btn" class="lg:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Menu">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex-1"></div>
+
+      <!-- Right Actions -->
+      <div class="flex items-center gap-3 ml-auto">
+        <button onclick="showToast('Notifikasi Terbaru');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+        </button>
+        <button onclick="showToast('Pengaturan Sistem');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+        <div class="h-6 w-px bg-gray-200"></div>
+        <div class="flex items-center gap-3">
+          <div class="text-right hidden sm:block">
+            <div class="text-[13px] font-bold text-navy leading-tight">Merica Wibisono</div>
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">ADMINISTRATOR</span>
+          </div>
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+               class="w-9 h-9 rounded-full object-cover border-2 border-gold/40 shadow-sm" alt="Merica Wibisono" />
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 px-4 sm:px-8 py-8 max-w-[1240px] w-full overflow-x-hidden">
+
+      <!-- Header Section -->
+      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 class="font-serif text-[36px] font-bold text-navy leading-tight mb-1">Manajemen Akun Resepsionis</h1>
+          <p class="text-[15px] text-gray-500">Kelola akses, profil, dan kredensial tim operasional hotel Anda.</p>
+        </div>
+        <button id="btn-add-receptionist"
+                class="flex items-center gap-2 px-5 py-2.5 bg-navy hover:bg-navy-mid text-white font-bold text-[14px] rounded-xl shadow-md transition-colors flex-shrink-0">
+          <i data-lucide="user-plus" class="w-4.5 h-4.5"></i>
+          <span>Tambah Akun Receptionist</span>
+        </button>
+      </div>
+
+      <!-- Information Alert Banner -->
+      <div class="bg-[#EFF6FF] border border-[#BFDBFE] rounded-2xl p-4 mb-6 flex items-center gap-3">
+        <i data-lucide="info" class="w-5 h-5 text-[#2563EB] flex-shrink-0"></i>
+        <p class="text-[13.5px] font-medium text-[#1E40AF]">
+          Admin hanya dapat mengelola akun Receptionist, bukan akun Admin lain.
+        </p>
+      </div>
+
+      <!-- Toolbar Card (Filter & Search) -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <!-- Dropdown Filter Left -->
+        <div class="relative w-full sm:w-56">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+            <i data-lucide="filter" class="w-4 h-4"></i>
+          </div>
+          <select id="status-filter" class="w-full pl-9 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] font-medium text-gray-700 focus:outline-none focus:bg-white focus:border-navy/30 transition-all appearance-none cursor-pointer">
+            <option value="all">Semua Status</option>
+            <option value="Aktif">Aktif</option>
+            <option value="Nonaktif">Nonaktif</option>
+          </select>
+          <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+          </div>
+        </div>
+
+        <!-- Search Box Right -->
+        <div class="relative w-full sm:w-72">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+            <i data-lucide="search" class="w-4 h-4"></i>
+          </div>
+          <input id="search-input" type="text" placeholder="Cari nama atau email..."
+                 class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 transition-all" />
+        </div>
+      </div>
+
+      <!-- Data Table Card -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left min-w-[700px]">
+            <thead>
+              <tr class="border-b border-gray-100 bg-gray-50/50">
+                <th class="py-3.5 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">NAMA</th>
+                <th class="py-3.5 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">EMAIL</th>
+                <th class="py-3.5 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">TANGGAL DIBUAT</th>
+                <th class="py-3.5 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">AKSI</th>
+              </tr>
+            </thead>
+            <tbody id="rec-table-body" class="divide-y divide-gray-100 text-[14px]">
+
+              <!-- Row 1: Ketumbar Anindya -->
+              <tr class="hover:bg-gray-50/60 transition-colors rec-row" data-search="ketumbar anindya ketumbar@stayease.com" data-status="Aktif">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-[#E8D9B6] text-[#8C6B27] font-bold text-[13px] flex items-center justify-center flex-shrink-0">
+                      KA
+                    </div>
+                    <span class="font-bold text-navy">Ketumbar Anindya</span>
+                  </div>
+                </td>
+                <td class="py-4 px-6 text-gray-600 text-[13.5px]">ketumbar@stayease.com</td>
+                <td class="py-4 px-6 text-gray-600 text-[13.5px]">12 Juli 2026</td>
+                <td class="py-4 px-6 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <button onclick="openEditModal('Ketumbar Anindya', 'ketumbar@stayease.com', '+62 812 4455 6677')"
+                            class="text-navy hover:text-navy-mid transition-colors p-1" title="Edit">
+                      <i data-lucide="pencil" class="w-4.5 h-4.5"></i>
+                    </button>
+                    <button onclick="openDeleteModal('Ketumbar Anindya')"
+                            class="text-red-500 hover:text-red-700 transition-colors p-1" title="Delete">
+                      <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 2: Kapulaga Wirawan -->
+              <tr class="hover:bg-gray-50/60 transition-colors rec-row" data-search="kapulaga wirawan kapulaga@stayease.com" data-status="Aktif">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-[#E8D9B6] text-[#8C6B27] font-bold text-[13px] flex items-center justify-center flex-shrink-0">
+                      KW
+                    </div>
+                    <span class="font-bold text-navy">Kapulaga Wirawan</span>
+                  </div>
+                </td>
+                <td class="py-4 px-6 text-gray-600 text-[13.5px]">kapulaga@stayease.com</td>
+                <td class="py-4 px-6 text-gray-600 text-[13.5px]">08 Juli 2026</td>
+                <td class="py-4 px-6 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <button onclick="openEditModal('Kapulaga Wirawan', 'kapulaga@stayease.com', '+62 813 9988 7766')"
+                            class="text-navy hover:text-navy-mid transition-colors p-1" title="Edit">
+                      <i data-lucide="pencil" class="w-4.5 h-4.5"></i>
+                    </button>
+                    <button onclick="openDeleteModal('Kapulaga Wirawan')"
+                            class="text-red-500 hover:text-red-700 transition-colors p-1" title="Delete">
+                      <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 3: Kemangi Ardana -->
+              <tr class="hover:bg-gray-50/60 transition-colors rec-row" data-search="kemangi ardana kemangi@stayease.com" data-status="Aktif">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-[#E8D9B6] text-[#8C6B27] font-bold text-[13px] flex items-center justify-center flex-shrink-0">
+                      KA
+                    </div>
+                    <span class="font-bold text-navy">Kemangi Ardana</span>
+                  </div>
+                </td>
+                <td class="py-4 px-6 text-gray-600 text-[13.5px]">kemangi@stayease.com</td>
+                <td class="py-4 px-6 text-gray-600 text-[13.5px]">15 Juli 2026</td>
+                <td class="py-4 px-6 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <button onclick="openEditModal('Kemangi Ardana', 'kemangi@stayease.com', '+62 811 2233 4455')"
+                            class="text-navy hover:text-navy-mid transition-colors p-1" title="Edit">
+                      <i data-lucide="pencil" class="w-4.5 h-4.5"></i>
+                    </button>
+                    <button onclick="openDeleteModal('Kemangi Ardana')"
+                            class="text-red-500 hover:text-red-700 transition-colors p-1" title="Delete">
+                      <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 4: Erlangga Pala -->
+              <tr class="hover:bg-gray-50/60 transition-colors rec-row" data-search="erlangga pala erlangga@stayease.com" data-status="Aktif">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-[#E8D9B6] text-[#8C6B27] font-bold text-[13px] flex items-center justify-center flex-shrink-0">
+                      EP
+                    </div>
+                    <span class="font-bold text-navy">Erlangga Pala</span>
+                  </div>
+                </td>
+                <td class="py-4 px-6 text-gray-600 text-[13.5px]">erlangga@stayease.com</td>
+                <td class="py-4 px-6 text-gray-600 text-[13.5px]">02 Juli 2026</td>
+                <td class="py-4 px-6 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <button onclick="openEditModal('Erlangga Pala', 'erlangga@stayease.com', '+62 819 8877 6655')"
+                            class="text-navy hover:text-navy-mid transition-colors p-1" title="Edit">
+                      <i data-lucide="pencil" class="w-4.5 h-4.5"></i>
+                    </button>
+                    <button onclick="openDeleteModal('Erlangga Pala')"
+                            class="text-red-500 hover:text-red-700 transition-colors p-1" title="Delete">
+                      <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer / Pagination -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-100 bg-gray-50/30">
+          <p id="showing-text" class="text-[13px] text-gray-500 font-medium">Menampilkan 4 dari 12 akun</p>
+          <div class="flex items-center gap-1.5">
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-100 transition-colors">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-navy text-white text-[13px] font-bold shadow-sm">1</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-[13px] font-medium transition-colors">2</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-[13px] font-medium transition-colors">3</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-100 transition-colors">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════ JAVASCRIPT ══════════ -->
+  <script>
+    lucide.createIcons();
+
+    // Toast
+    function showToast(msg) {
+      document.getElementById('toast-msg').textContent = msg;
+      const t = document.getElementById('toast');
+      t.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'), 3000);
+    }
+
+    // Modal Create / Edit Receptionist
+    const createModal = document.getElementById('modal-create-receptionist');
+    const formTitle = document.getElementById('form-title');
+    let editTarget = null;
+
+    document.getElementById('btn-add-receptionist').addEventListener('click', () => {
+      editTarget = null;
+      formTitle.textContent = 'Tambah Akun Receptionist';
+      document.getElementById('form-receptionist-create').reset();
+      createModal.classList.remove('hidden');
+    });
+
+    function openEditModal(name, email, phone) {
+      editTarget = name;
+      formTitle.textContent = `Edit Akun Receptionist (${name})`;
+      document.getElementById('input-fullname').value = name;
+      document.getElementById('input-email').value = email;
+      document.getElementById('input-phone').value = phone;
+      document.getElementById('input-username').value = email.split('@')[0];
+      createModal.classList.remove('hidden');
+    }
+
+    document.getElementById('close-create-modal').addEventListener('click', () => createModal.classList.add('hidden'));
+    document.getElementById('btn-cancel-create').addEventListener('click', () => createModal.classList.add('hidden'));
+    createModal.addEventListener('click', e => { if (e.target === createModal) createModal.classList.add('hidden'); });
+
+    document.getElementById('form-receptionist-create').addEventListener('submit', e => {
+      e.preventDefault();
+      createModal.classList.add('hidden');
+      showToast(editTarget ? '✅ Akun Receptionist berhasil diperbarui.' : '✅ Akun Receptionist baru berhasil disimpan.');
+    });
+
+    // Delete Modal
+    const delModal = document.getElementById('delete-modal');
+    let delTargetName = '';
+
+    function openDeleteModal(name) {
+      delTargetName = name;
+      delModal.classList.remove('hidden');
+    }
+
+    document.getElementById('btn-cancel-del').addEventListener('click', () => delModal.classList.add('hidden'));
+    delModal.addEventListener('click', e => { if (e.target === delModal) delModal.classList.add('hidden'); });
+
+    document.getElementById('btn-confirm-del').addEventListener('click', () => {
+      delModal.classList.add('hidden');
+      showToast(`✅ Akun Receptionist "${delTargetName}" berhasil dihapus.`);
+    });
+
+    // Realtime Search & Filter
+    const searchInput = document.getElementById('search-input');
+    const statusFilter = document.getElementById('status-filter');
+    const rows = document.querySelectorAll('.rec-row');
+
+    function applyFilters() {
+      const q = searchInput.value.toLowerCase().trim();
+      const status = statusFilter.value;
+      let visible = 0;
+
+      rows.forEach(row => {
+        const text = row.getAttribute('data-search') || '';
+        const rowStatus = row.getAttribute('data-status') || '';
+        const matchSearch = !q || text.includes(q);
+        const matchStatus = status === 'all' || rowStatus === status;
+
+        if (matchSearch && matchStatus) {
+          row.style.display = '';
+          visible++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      document.getElementById('showing-text').textContent = `Menampilkan ${visible} dari 12 akun`;
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+
+    // Mobile Sidebar Toggle
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+
+</body>
+</html>

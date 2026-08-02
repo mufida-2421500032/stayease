@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Room Data – StayEase Property Management</title>
+  <meta name="description" content="Complete the form below to register a new guest room or update existing room information." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:       '#0F2A44',
+            'navy-mid': '#1a3a5c',
+            gold:       '#C89A43',
+            'gold-dark':'#8C6B27',
+            page:       '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color: #F8F7F4; font-family: 'Inter', sans-serif; color: #1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-xl transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-bold text-white
+               bg-gold-dark rounded-xl shadow-sm transition-all duration-150;
+      }
+      .facility-chip {
+        @apply flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 transition-all cursor-pointer select-none;
+      }
+      .facility-chip-active {
+        @apply flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold border border-gold/40 text-navy bg-gold/15 transition-all cursor-pointer select-none shadow-sm;
+      }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex bg-page">
+  <!-- Mobile Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+  <!-- ══════════════════════ TOAST NOTIFICATION ══════════════════════ -->
+  <div id="toast"
+       class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl
+              transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none">
+    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
+    <span id="toast-msg" class="text-[14px] font-semibold">Room successfully saved.</span>
+  </div>
+
+  <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[220px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+
+    <!-- Logo -->
+    <div class="px-6 pt-6 pb-5 border-b border-white/10">
+      <a href="admin-dashboard.html" class="block">
+        <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+        <span class="text-[10px] font-medium text-white/50 tracking-wider uppercase mt-1 block">Management Portal</span>
+      </a>
+    </div>
+
+    <!-- Nav Menu -->
+    <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto no-scrollbar">
+      <a href="admin-dashboard.html" class="sb-link">
+        <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="admin-rooms.html" class="sb-link-active" aria-current="page">
+        <i data-lucide="bed" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Rooms</span>
+      </a>
+      <a href="#" onclick="showToast('Navigasi ke Manage Room Types'); return false;" class="sb-link">
+        <i data-lucide="layers" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Room Types</span>
+      </a>
+      <a href="#" onclick="showToast('Navigasi ke Manage Facilities'); return false;" class="sb-link">
+        <i data-lucide="sparkles" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Facilities</span>
+      </a>
+      <a href="#" onclick="showToast('Navigasi ke Manage Receptionists'); return false;" class="sb-link">
+        <i data-lucide="user-cog" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Receptionist</span>
+      </a>
+      <a href="admin-all-bookings.html" class="sb-link">
+        <i data-lucide="calendar" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>All Bookings</span>
+      </a>
+      <a href="admin-reports.html" class="sb-link">
+        <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Reports</span>
+      </a>
+    </nav>
+
+    <!-- Bottom Menu -->
+    <div class="px-4 py-5 border-t border-white/10 space-y-1">
+      <a href="#" onclick="showToast('Menghubungkan ke Support'); return false;"
+         class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="help-circle" class="w-4 h-4"></i>
+        <span>Support</span>
+      </a>
+      <a href="login.html"
+         class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[220px] flex flex-col min-h-screen w-full min-w-0">
+
+    <!-- Header Bar -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm flex-wrap lg:flex-nowrap">
+      
+      <button id="mobile-menu-btn" class="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Sidebar Menu">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+
+      <div class="flex-1"></div>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-4">
+        <button onclick="showToast('4 Notifikasi Baru');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors relative">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+        </button>
+        <button onclick="showToast('Pengaturan Sistem');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+
+        <div class="h-6 w-px bg-gray-200"></div>
+
+        <!-- Administrator Profile -->
+        <div class="flex items-center gap-3">
+          <div class="text-right hidden sm:block">
+            <div class="text-[13px] font-bold text-navy leading-tight">Merica Wibisono</div>
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">ADMINISTRATOR</span>
+          </div>
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+               alt="Merica Wibisono"
+               class="w-9 h-9 rounded-full object-cover border-2 border-gold/40 shadow-sm" />
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Workspace -->
+    <main class="flex-1 px-4 sm:px-8 py-7 max-w-[1100px] w-full overflow-x-hidden">
+
+      <!-- Breadcrumb -->
+      <nav class="flex items-center gap-1.5 text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+        <a href="admin-rooms.html" class="hover:text-navy transition-colors">MANAGE ROOMS</a>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-300"></i>
+        <span id="breadcrumb-page" class="text-navy">ADD ROOM</span>
+      </nav>
+
+      <!-- Page Title -->
+      <div class="mb-7">
+        <h1 id="page-title" class="font-serif text-[34px] font-bold text-navy leading-tight mb-1">Manage Room Data</h1>
+        <p class="text-[15px] text-gray-500 max-w-3xl">Complete the form below to register a new guest room or update existing information. Ensure all details reflect the current property standards.</p>
+      </div>
+
+      <!-- ── MAIN FORM CARD ── -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 mb-8">
+        <form id="room-form" class="space-y-6">
+
+          <!-- Row 1: Nomor Kamar & Tipe Kamar -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-[14px] font-bold text-gray-700 mb-2">Nomor Kamar <span class="text-red-500">*</span></label>
+              <input type="text" id="room-number" required placeholder="e.g. 101"
+                     class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-[14px] text-gray-800 placeholder-gray-400 focus:outline-none focus:border-navy focus:ring-2 focus:ring-navy/10 transition-all font-medium" />
+              <p id="error-room-number" class="text-[12px] text-red-500 font-semibold mt-1 hidden">Nomor kamar harus unik dan belum digunakan.</p>
+            </div>
+
+            <div>
+              <label class="block text-[14px] font-bold text-gray-700 mb-2">Tipe Kamar <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <select id="room-type" required
+                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-[14px] text-gray-800 focus:outline-none focus:border-navy focus:ring-2 focus:ring-navy/10 transition-all font-medium appearance-none">
+                  <option value="" disabled selected>Select Room Type</option>
+                  <option value="Standard Room">Standard Room</option>
+                  <option value="Deluxe Room">Deluxe Room</option>
+                  <option value="Deluxe Twin">Deluxe Twin</option>
+                  <option value="Family Room">Family Room</option>
+                  <option value="Executive Suite">Executive Suite</option>
+                  <option value="Presidential Suite">Presidential Suite</option>
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400">
+                  <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2: Status & Floor -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-[14px] font-bold text-gray-700 mb-2">Status <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <select id="room-status" required
+                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-[14px] text-gray-800 focus:outline-none focus:border-navy focus:ring-2 focus:ring-navy/10 transition-all font-medium appearance-none">
+                  <option value="Tersedia" selected>Tersedia</option>
+                  <option value="Terisi">Terisi</option>
+                  <option value="Maintenance">Maintenance</option>
+                  <option value="Out of Service">Out of Service</option>
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400">
+                  <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[14px] font-bold text-gray-700 mb-2">Lantai / Floor <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <select id="room-floor" required
+                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-[14px] text-gray-800 focus:outline-none focus:border-navy focus:ring-2 focus:ring-navy/10 transition-all font-medium appearance-none">
+                  <option value="Floor 1">Floor 1</option>
+                  <option value="Floor 2">Floor 2</option>
+                  <option value="Floor 3">Floor 3</option>
+                  <option value="Floor 4">Floor 4</option>
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400">
+                  <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 3: Additional Specs (Max Occupancy, Bed Type, Size, Base Price) -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-[13px] font-bold text-gray-700 mb-2">Maks. Kapasitas <span class="text-red-500">*</span></label>
+              <input type="number" id="room-capacity" min="1" value="2" required placeholder="2 Guests"
+                     class="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-[13px] text-gray-800 font-medium focus:outline-none focus:border-navy" />
+            </div>
+
+            <div>
+              <label class="block text-[13px] font-bold text-gray-700 mb-2">Tipe Kasur</label>
+              <select id="room-bed" class="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-[13px] text-gray-800 font-medium focus:outline-none focus:border-navy">
+                <option value="Single">Single</option>
+                <option value="Twin">Twin</option>
+                <option value="Queen">Queen</option>
+                <option value="King" selected>King</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[13px] font-bold text-gray-700 mb-2">Ukuran Kamar</label>
+              <input type="text" id="room-size" value="32 m²" placeholder="32 m²"
+                     class="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-[13px] text-gray-800 font-medium focus:outline-none focus:border-navy" />
+            </div>
+
+            <div>
+              <label class="block text-[13px] font-bold text-gray-700 mb-2">Harga Dasar / Malam <span class="text-red-500">*</span></label>
+              <input type="text" id="room-price" value="Rp 850.000" required placeholder="Rp850.000"
+                     class="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-[13px] text-gray-800 font-bold focus:outline-none focus:border-navy" />
+            </div>
+          </div>
+
+          <!-- Row 4: Fasilitas Kamar (Chips) -->
+          <div>
+            <label class="block text-[14px] font-bold text-gray-700 mb-3">Fasilitas Kamar</label>
+            <div class="flex flex-wrap gap-2.5" id="facility-chips">
+              <div class="facility-chip-active" data-[#1]="AC">
+                <i data-lucide="snowflake" class="w-4 h-4 text-cyan-600"></i> AC
+              </div>
+              <div class="facility-chip-active" data-[#1]="WiFi">
+                <i data-lucide="wifi" class="w-4 h-4 text-blue-600"></i> WiFi
+              </div>
+              <div class="facility-chip-active" data-[#1]="TV">
+                <i data-lucide="tv" class="w-4 h-4 text-gray-600"></i> TV
+              </div>
+              <div class="facility-chip-active" data-[#1]="Water Heater">
+                <i data-lucide="flame" class="w-4 h-4 text-amber-600"></i> Water Heater
+              </div>
+              <div class="facility-chip-active" data-[#1]="Mini Bar">
+                <i data-lucide="wine" class="w-4 h-4 text-purple-600"></i> Mini Bar
+              </div>
+              <div class="facility-chip" data-[#1]="Coffee Maker">
+                <i data-lucide="coffee" class="w-4 h-4 text-amber-700"></i> Coffee Maker
+              </div>
+              <div class="facility-chip" data-[#1]="Hair Dryer">
+                <i data-lucide="wind" class="w-4 h-4 text-pink-600"></i> Hair Dryer
+              </div>
+              <div class="facility-chip" data-[#1]="Safe Deposit Box">
+                <i data-lucide="lock" class="w-4 h-4 text-emerald-600"></i> Safe Deposit Box
+              </div>
+              <div class="facility-chip" data-[#1]="Telephone">
+                <i data-lucide="phone" class="w-4 h-4 text-blue-500"></i> Telephone
+              </div>
+              <div class="facility-chip" data-[#1]="Refrigerator">
+                <i data-lucide="box" class="w-4 h-4 text-indigo-600"></i> Refrigerator
+              </div>
+              <div class="facility-chip" data-[#1]="Balcony">
+                <i data-lucide="sun" class="w-4 h-4 text-amber-500"></i> Balcony
+              </div>
+              <div class="facility-chip" data-[#1]="Bathtub">
+                <i data-lucide="bath" class="w-4 h-4 text-teal-600"></i> Bathtub
+              </div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label class="block text-[14px] font-bold text-gray-700 mb-2">Deskripsi Kamar (Opsional)</label>
+            <textarea id="room-desc" rows="3" placeholder="Tambahkan deskripsi atau catatan khusus untuk kamar ini..."
+                      class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-[13px] text-gray-800 placeholder-gray-400 focus:outline-none focus:border-navy transition-all resize-none"></textarea>
+          </div>
+
+          <!-- Upload Photos Dropzone -->
+          <div>
+            <label class="block text-[14px] font-bold text-gray-700 mb-2">Upload Room Photos <span class="text-gray-400 font-normal text-[12px]">(Min 1, Max 10)</span></label>
+            <div class="border-2 border-dashed border-gray-200 rounded-2xl p-6 bg-gray-50 flex flex-col items-center justify-center text-center cursor-pointer hover:border-navy/40 transition-colors">
+              <div class="w-12 h-12 rounded-full bg-navy/5 flex items-center justify-center text-navy mb-2">
+                <i data-lucide="image-plus" class="w-6 h-6"></i>
+              </div>
+              <p class="text-[13px] font-bold text-navy mb-0.5">Drag and drop photo files here or click to browse</p>
+              <p class="text-[11px] text-gray-400">Supports JPG, PNG, WEBP up to 5MB each</p>
+            </div>
+          </div>
+
+          <!-- Form Buttons -->
+          <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
+            <button type="submit"
+                    class="flex items-center gap-2 px-6 py-3 bg-navy hover:bg-navy-mid text-white font-bold text-[14px] rounded-xl transition-colors shadow-md">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              <span>Simpan</span>
+            </button>
+
+            <a href="admin-rooms.html"
+               class="flex items-center gap-2 px-6 py-3 border border-navy text-navy hover:bg-navy/5 font-bold text-[14px] rounded-xl transition-colors">
+              <i data-lucide="x" class="w-4 h-4"></i>
+              <span>Batal</span>
+            </a>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- ── BOTTOM INFORMATION CARDS (3 CARDS) ── -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+        <!-- Card 1: Room Standards -->
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-start gap-3.5">
+          <div class="w-9 h-9 rounded-full bg-amber-50 flex items-center justify-center text-gold flex-shrink-0 mt-0.5">
+            <i data-lucide="info" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="font-serif text-[16px] font-bold text-navy mb-1">Room Standards</h4>
+            <p class="text-[12px] text-gray-500 leading-relaxed">Standard rooms must include at least AC and WiFi as basic amenities for guest satisfaction.</p>
+          </div>
+        </div>
+
+        <!-- Card 2: Premium Perks -->
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 border-l-4 border-l-gold shadow-sm flex items-start gap-3.5">
+          <div class="w-9 h-9 rounded-full bg-amber-50 flex items-center justify-center text-gold flex-shrink-0 mt-0.5">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="font-serif text-[16px] font-bold text-navy mb-1">Premium Perks</h4>
+            <p class="text-[12px] text-gray-500 leading-relaxed">Suite and Deluxe rooms are encouraged to have a Mini Bar and Water Heater pre-checked.</p>
+          </div>
+        </div>
+
+        <!-- Card 3: Audit Ready -->
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-start gap-3.5">
+          <div class="w-9 h-9 rounded-full bg-amber-50 flex items-center justify-center text-gold flex-shrink-0 mt-0.5">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="font-serif text-[16px] font-bold text-navy mb-1">Audit Ready</h4>
+            <p class="text-[12px] text-gray-500 leading-relaxed">All changes are logged for internal audit purposes to maintain property integrity.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════ JAVASCRIPT ══════════════════════ -->
+  <script>
+    lucide.createIcons();
+
+    // ── Toast Helper ──
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-msg');
+    function showToast(msg) {
+      toastMsg.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      setTimeout(() => toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'), 3000);
+    }
+
+    // ── Facility Chips Toggle ──
+    document.querySelectorAll('#facility-chips > div').forEach(chip => {
+      chip.addEventListener('click', function() {
+        if (this.classList.contains('facility-chip-active')) {
+          this.className = 'facility-chip';
+        } else {
+          this.className = 'facility-chip-active';
+        }
+      });
+    });
+
+    // ── Edit Mode Handling ──
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    const roomId = urlParams.get('id');
+
+    if (mode === 'edit') {
+      document.getElementById('breadcrumb-page').textContent = 'EDIT ROOM';
+      document.getElementById('page-title').textContent = 'Edit Room Data';
+      document.title = 'Edit Room Data – StayEase Property Management';
+
+      // Auto-fill existing room data
+      const roomNumInput = document.getElementById('room-number');
+      const roomTypeSelect = document.getElementById('room-type');
+      const roomStatusSelect = document.getElementById('room-status');
+
+      if (roomId) {
+        roomNumInput.value = roomId;
+        if (roomId === '204') roomTypeSelect.value = 'Deluxe Suite';
+        else if (roomId === '302') { roomTypeSelect.value = 'Penthouse'; roomStatusSelect.value = 'Maintenance'; }
+        else if (roomId === '401') { roomTypeSelect.value = 'Presidential Suite'; roomStatusSelect.value = 'Out of Service'; }
+        else roomTypeSelect.value = 'Standard Room';
+      }
+    }
+
+    // ── Form Validation & Submission ──
+    const form = document.getElementById('room-form');
+    const roomNumInput = document.getElementById('room-number');
+    const errorRoomNum = document.getElementById('error-room-number');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      // Check unique room number validation
+      const val = roomNumInput.value.trim();
+      if (mode !== 'edit' && (val === '101' || val === '204' || val === '302' || val === '105' || val === '401')) {
+        errorRoomNum.classList.remove('hidden');
+        roomNumInput.focus();
+        return;
+      }
+      errorRoomNum.classList.add('hidden');
+
+      showToast('✅ Room successfully saved.');
+      setTimeout(() => {
+        window.location.href = 'admin-rooms.html';
+      }, 1200);
+    });
+
+    roomNumInput.addEventListener('input', () => errorRoomNum.classList.add('hidden'));
+
+    // Mobile Sidebar Toggle
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+
+</body>
+</html>

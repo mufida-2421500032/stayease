@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manajemen Kamar – StayEase Property Management</title>
+  <meta name="description" content="Kelola inventaris kamar hotel Anda, perbarui status, dan atur tipe akomodasi dengan mudah." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:       '#0F2A44',
+            'navy-mid': '#1a3a5c',
+            gold:       '#C89A43',
+            'gold-dark':'#8C6B27',
+            page:       '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color: #F8F7F4; font-family: 'Inter', sans-serif; color: #1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-xl transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-bold text-white
+               bg-gold-dark rounded-xl shadow-sm transition-all duration-150;
+      }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex bg-page">
+  <!-- Mobile Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+  <!-- ══════════════════════ TOAST NOTIFICATION ══════════════════════ -->
+  <div id="toast"
+       class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl
+              transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none">
+    <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
+    <span id="toast-msg" class="text-[14px] font-semibold">Tindakan berhasil dilaksanakan.</span>
+  </div>
+
+  <!-- ══════════════════════ DELETE CONFIRMATION MODAL ══════════════════════ -->
+  <div id="delete-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[420px] p-7">
+      <div class="flex items-start gap-4 mb-5">
+        <div class="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="trash-2" class="w-5 h-5 text-red-600"></i>
+        </div>
+        <div>
+          <h3 class="font-serif text-[18px] font-bold text-navy mb-1">Hapus Kamar</h3>
+          <p class="text-[13px] text-gray-500 leading-relaxed">Are you sure you want to permanently remove this room? Tindakan ini tidak dapat dibatalkan.</p>
+        </div>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button id="btn-cancel-delete"
+                class="px-4 py-2 text-[13px] font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+          Cancel
+        </button>
+        <button id="btn-confirm-delete"
+                class="px-5 py-2 text-[13px] font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors shadow-sm flex items-center gap-1.5">
+          <i data-lucide="trash" class="w-4 h-4"></i> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ SIDEBAR (ROLE ADMINISTRATOR) ══════════════════════ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[220px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+
+    <!-- Logo -->
+    <div class="px-6 pt-6 pb-5 border-b border-white/10">
+      <a href="admin-dashboard.html" class="block">
+        <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+        <span class="text-[10px] font-medium text-white/50 tracking-wider uppercase mt-1 block">Management Portal</span>
+      </a>
+    </div>
+
+    <!-- Nav Menu -->
+    <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto no-scrollbar">
+      <a href="admin-dashboard.html" class="sb-link">
+        <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="admin-rooms.html" class="sb-link-active" aria-current="page">
+        <i data-lucide="bed" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Rooms</span>
+      </a>
+      <a href="admin-room-types.html" class="sb-link">
+        <i data-lucide="layers" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Room Types</span>
+      </a>
+      <a href="admin-facilities.html" class="sb-link">
+        <i data-lucide="sparkles" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Facilities</span>
+      </a>
+      <a href="admin-receptionists.html" class="sb-link">
+        <i data-lucide="user-cog" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Receptionist</span>
+      </a>
+      <a href="admin-all-bookings.html" class="sb-link">
+        <i data-lucide="calendar" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>All Bookings</span>
+      </a>
+      <a href="admin-reports.html" class="sb-link">
+        <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Reports</span>
+      </a>
+    </nav>
+
+    <!-- Bottom Menu -->
+    <div class="px-4 py-5 border-t border-white/10 space-y-1">
+      <a href="#" onclick="showToast('Menghubungkan ke Support'); return false;"
+         class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="help-circle" class="w-4 h-4"></i>
+        <span>Support</span>
+      </a>
+      <a href="login.html"
+         class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[220px] flex flex-col min-h-screen w-full min-w-0">
+
+    <!-- Header Bar -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm flex-wrap lg:flex-nowrap">
+      <div class="flex items-center gap-4 flex-1">
+        <button id="mobile-menu-btn" class="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Sidebar Menu">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-4">
+        <button onclick="showToast('4 Notifikasi Baru');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors relative">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+        </button>
+        <button onclick="showToast('Pengaturan Sistem');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+
+        <div class="h-6 w-px bg-gray-200"></div>
+
+        <!-- Administrator Profile -->
+        <div class="flex items-center gap-3">
+          <div class="text-right hidden sm:block">
+            <div class="text-[13px] font-bold text-navy leading-tight">Merica Wibisono</div>
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">ADMINISTRATOR</span>
+          </div>
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+               alt="Merica Wibisono"
+               class="w-9 h-9 rounded-full object-cover border-2 border-gold/40 shadow-sm" />
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Workspace -->
+    <main class="flex-1 px-4 sm:px-8 py-7 max-w-[1240px] w-full overflow-x-hidden">
+
+      <!-- Title & Top Action -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 class="font-serif text-[34px] font-bold text-navy leading-tight mb-1">Manajemen Kamar</h1>
+          <p class="text-[15px] text-gray-500">Kelola inventaris kamar hotel Anda, perbarui status, dan atur tipe akomodasi dengan mudah.</p>
+        </div>
+        <a href="admin-add-room.html"
+           class="flex items-center gap-2 px-5 py-2.5 bg-gold-dark hover:bg-gold text-white font-bold text-[14px] rounded-xl transition-colors shadow-md flex-shrink-0">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Tambah Kamar</span>
+        </a>
+      </div>
+
+      <!-- ── TABLE CARD CONTAINER ── -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-8">
+
+        <!-- Top Filter Bar inside Card -->
+        <div class="p-4 border-b border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <!-- Search Input -->
+          <div class="relative w-full sm:w-80">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </div>
+            <input id="room-search" type="text" placeholder="Cari berdasarkan nomor kamar..."
+                   class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 transition-all" />
+          </div>
+
+          <!-- Filter Dropdown & Advanced Button -->
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <select id="filter-type" class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] font-semibold text-gray-700 focus:outline-none w-full sm:w-auto">
+              <option value="all">Semua Tipe Kamar</option>
+              <option value="Standard Room">Standard Room</option>
+              <option value="Deluxe Suite">Deluxe Suite</option>
+              <option value="Penthouse">Penthouse</option>
+              <option value="Premium Suite">Premium Suite</option>
+            </select>
+
+            <button id="btn-adv-filter" class="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 text-[13px] font-semibold text-gray-700 rounded-xl hover:bg-gray-100 transition-colors flex-shrink-0">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4 text-gray-500"></i>
+              <span>Filter Lanjutan</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Room Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left min-w-[700px]">
+            <thead>
+              <tr class="border-b border-gray-100 bg-gray-50/50">
+                <th class="py-3.5 px-8 text-[11px] font-bold text-gray-400 uppercase tracking-wider">NOMOR KAMAR</th>
+                <th class="py-3.5 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">TIPE KAMAR</th>
+                <th class="py-3.5 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">STATUS</th>
+                <th class="py-3.5 px-8 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">AKSI</th>
+              </tr>
+            </thead>
+            <tbody id="room-table-body" class="divide-y divide-gray-100 text-[14px]">
+
+              <!-- Row 1: 101 -->
+              <tr class="hover:bg-gray-50/60 transition-colors room-row" data-search="101 standard room tersedia">
+                <td class="py-4.5 px-8 font-bold text-navy text-[15px]">101</td>
+                <td class="py-4.5 px-6 text-gray-700 font-medium">Standard Room</td>
+                <td class="py-4.5 px-6">
+                  <span class="inline-block bg-emerald-100 text-emerald-800 text-[12px] font-extrabold px-3 py-1 rounded-full">
+                    Tersedia
+                  </span>
+                </td>
+                <td class="py-4.5 px-8 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <a href="admin-add-room.html?mode=edit&id=101" class="text-gray-600 hover:text-navy transition-colors p-1" title="Edit Room">
+                      <i data-lucide="sliders" class="w-4.5 h-4.5"></i>
+                    </a>
+                    <button type="button" onclick="openDeleteModal('101')" class="text-red-500 hover:text-red-700 transition-colors p-1" title="Delete Room">
+                      <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 2: 204 -->
+              <tr class="hover:bg-gray-50/60 transition-colors room-row" data-search="204 deluxe suite tersedia">
+                <td class="py-4.5 px-8 font-bold text-navy text-[15px]">204</td>
+                <td class="py-4.5 px-6 text-gray-700 font-medium">Deluxe Suite</td>
+                <td class="py-4.5 px-6">
+                  <span class="inline-block bg-emerald-100 text-emerald-800 text-[12px] font-extrabold px-3 py-1 rounded-full">
+                    Tersedia
+                  </span>
+                </td>
+                <td class="py-4.5 px-8 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <a href="admin-add-room.html?mode=edit&id=204" class="text-gray-600 hover:text-navy transition-colors p-1" title="Edit Room">
+                      <i data-lucide="sliders" class="w-4.5 h-4.5"></i>
+                    </a>
+                    <button type="button" onclick="openDeleteModal('204')" class="text-red-500 hover:text-red-700 transition-colors p-1" title="Delete Room">
+                      <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 3: 302 -->
+              <tr class="hover:bg-gray-50/60 transition-colors room-row" data-search="302 penthouse tidak tersedia">
+                <td class="py-4.5 px-8 font-bold text-navy text-[15px]">302</td>
+                <td class="py-4.5 px-6 text-gray-700 font-medium">Penthouse</td>
+                <td class="py-4.5 px-6">
+                  <span class="inline-block bg-red-100 text-red-700 text-[12px] font-extrabold px-3 py-1 rounded-full">
+                    Tidak Tersedia
+                  </span>
+                </td>
+                <td class="py-4.5 px-8 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <a href="admin-add-room.html?mode=edit&id=302" class="text-gray-600 hover:text-navy transition-colors p-1" title="Edit Room">
+                      <i data-lucide="sliders" class="w-4.5 h-4.5"></i>
+                    </a>
+                    <button type="button" onclick="openDeleteModal('302')" class="text-red-500 hover:text-red-700 transition-colors p-1" title="Delete Room">
+                      <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 4: 105 -->
+              <tr class="hover:bg-gray-50/60 transition-colors room-row" data-search="105 standard room tersedia">
+                <td class="py-4.5 px-8 font-bold text-navy text-[15px]">105</td>
+                <td class="py-4.5 px-6 text-gray-700 font-medium">Standard Room</td>
+                <td class="py-4.5 px-6">
+                  <span class="inline-block bg-emerald-100 text-emerald-800 text-[12px] font-extrabold px-3 py-1 rounded-full">
+                    Tersedia
+                  </span>
+                </td>
+                <td class="py-4.5 px-8 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <a href="admin-add-room.html?mode=edit&id=105" class="text-gray-600 hover:text-navy transition-colors p-1" title="Edit Room">
+                      <i data-lucide="sliders" class="w-4.5 h-4.5"></i>
+                    </a>
+                    <button type="button" onclick="openDeleteModal('105')" class="text-red-500 hover:text-red-700 transition-colors p-1" title="Delete Room">
+                      <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 5: 401 -->
+              <tr class="hover:bg-gray-50/60 transition-colors room-row" data-search="401 premium suite tidak tersedia maintenance">
+                <td class="py-4.5 px-8 font-bold text-navy text-[15px]">401</td>
+                <td class="py-4.5 px-6 text-gray-700 font-medium">Premium Suite</td>
+                <td class="py-4.5 px-6">
+                  <span class="inline-block bg-red-100 text-red-700 text-[12px] font-extrabold px-3 py-1 rounded-full">
+                    Tidak Tersedia
+                  </span>
+                </td>
+                <td class="py-4.5 px-8 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <a href="admin-add-room.html?mode=edit&id=401" class="text-gray-600 hover:text-navy transition-colors p-1" title="Edit Room">
+                      <i data-lucide="sliders" class="w-4.5 h-4.5"></i>
+                    </a>
+                    <button type="button" onclick="openDeleteModal('401')" class="text-red-500 hover:text-red-700 transition-colors p-1" title="Delete Room">
+                      <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer / Pagination -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-8 py-4 border-t border-gray-100 bg-gray-50/30">
+          <p id="showing-text" class="text-[13px] text-gray-500 font-medium">Menampilkan 1 - 5 dari 120 Kamar</p>
+          <div class="flex items-center gap-1.5">
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-100 transition-colors">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-navy text-white text-[13px] font-bold shadow-sm">1</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-[13px] font-medium transition-colors">2</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-[13px] font-medium transition-colors">3</button>
+            <span class="px-1 text-gray-400 text-[13px]">...</span>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-[13px] font-medium transition-colors">24</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-100 transition-colors">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── BOTTOM SUMMARY CARDS (3 CARDS) ── -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+        <!-- Card 1: TERSEDIA -->
+        <div onclick="filterByBadge('Tersedia')"
+             class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-all">
+          <div class="w-11 h-11 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
+            <i data-lucide="check-circle" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 block mb-0.5">TERSEDIA</span>
+            <div class="font-serif text-[24px] font-bold text-navy leading-none">84 Kamar</div>
+          </div>
+        </div>
+
+        <!-- Card 2: TERISI / MAINTENANCE -->
+        <div onclick="filterByBadge('Tidak Tersedia')"
+             class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-all">
+          <div class="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0">
+            <i data-lucide="minus-circle" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 block mb-0.5">TERISI / MAINTENANCE</span>
+            <div class="font-serif text-[24px] font-bold text-navy leading-none">36 Kamar</div>
+          </div>
+        </div>
+
+        <!-- Card 3: TOTAL KAPASITAS -->
+        <div onclick="filterByBadge('all')"
+             class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-all">
+          <div class="w-11 h-11 rounded-full bg-amber-100 flex items-center justify-center text-gold flex-shrink-0">
+            <i data-lucide="bed" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 block mb-0.5">TOTAL KAPASITAS</span>
+            <div class="font-serif text-[24px] font-bold text-navy leading-none">120 Kamar</div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════ JAVASCRIPT ══════════════════════ -->
+  <script>
+    lucide.createIcons();
+
+    // ── Toast Helper ──
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-msg');
+    function showToast(msg) {
+      toastMsg.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      setTimeout(() => toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'), 3000);
+    }
+
+    // ── Delete Confirmation Modal ──
+    const deleteModal = document.getElementById('delete-modal');
+    let targetRoomNum = null;
+
+    function openDeleteModal(roomNum) {
+      targetRoomNum = roomNum;
+      deleteModal.classList.remove('hidden');
+    }
+
+    document.getElementById('btn-cancel-delete').addEventListener('click', () => deleteModal.classList.add('hidden'));
+    deleteModal.addEventListener('click', e => { if (e.target === deleteModal) deleteModal.classList.add('hidden'); });
+
+    document.getElementById('btn-confirm-delete').addEventListener('click', () => {
+      deleteModal.classList.add('hidden');
+      showToast(`Kamar #${targetRoomNum} telah berhasil dihapus dari sistem.`);
+      // Remove row dynamically
+      const rows = document.querySelectorAll('.room-row');
+      rows.forEach(r => {
+        if (r.getAttribute('data-search').includes(targetRoomNum)) {
+          r.style.transition = 'opacity 0.3s';
+          r.style.opacity = '0';
+          setTimeout(() => r.remove(), 300);
+        }
+      });
+    });
+
+    // ── Filtering & Search Logic ──
+    const roomSearch = document.getElementById('room-search');
+    const filterType = document.getElementById('filter-type');
+
+    function applyFilter() {
+      const q = roomSearch.value.toLowerCase().trim();
+      const typeVal = filterType.value.toLowerCase();
+      let visible = 0;
+
+      document.querySelectorAll('.room-row').forEach(row => {
+        const text = row.getAttribute('data-search') || '';
+        const matchSearch = !q || text.includes(q);
+        const matchType = typeVal === 'all' || text.includes(typeVal);
+
+        if (matchSearch && matchType) {
+          row.style.display = '';
+          visible++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      document.getElementById('showing-text').textContent = `Menampilkan 1 - ${visible} dari 120 Kamar`;
+    }
+
+    roomSearch.addEventListener('input', applyFilter);
+    filterType.addEventListener('change', applyFilter);
+
+    function filterByBadge(statusKey) {
+      if (statusKey === 'all') {
+        roomSearch.value = '';
+        filterType.value = 'all';
+      } else {
+        roomSearch.value = statusKey;
+      }
+      applyFilter();
+    }
+
+    // Mobile Sidebar Toggle
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+
+</body>
+</html>

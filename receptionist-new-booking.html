@@ -1,0 +1,548 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buat Booking Baru (Walk-in) – StayEase Property Management</title>
+  <meta name="description" content="Form pembuatan reservasi baru (walk-in) receptionist StayEase." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:        '#0F2A44',
+            'navy-mid':  '#1a3a5c',
+            gold:        '#C89A43',
+            'gold-light':'#F5E8C5',
+            'gold-bg':   '#F7EBC6',
+            page:        '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color:#F8F7F4; font-family:'Inter',sans-serif; color:#1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display:none; }
+      .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-lg transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-semibold text-white
+               bg-white/10 rounded-lg border-l-[3px] border-gold;
+      }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex bg-page">
+  <!-- Mobile Sidebar Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+
+  <!-- ══════════════════════ CONFIRM MODAL ══════════════════════ -->
+  <div id="confirm-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[440px] p-8">
+      <div class="flex items-start gap-4 mb-5">
+        <div class="w-11 h-11 rounded-full bg-gold/15 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="help-circle" class="w-5 h-5 text-gold"></i>
+        </div>
+        <div>
+          <h3 class="font-serif text-[20px] font-bold text-navy mb-1">Konfirmasi Booking Baru</h3>
+          <p class="text-[14px] text-gray-500 leading-relaxed">
+            Pastikan seluruh data customer dan detail reservasi sudah benar sebelum menyimpan.
+          </p>
+        </div>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button id="modal-batal" type="button"
+                class="px-5 py-2.5 text-[14px] font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+          Batal
+        </button>
+        <button id="modal-submit" type="button"
+                class="px-6 py-2.5 text-[14px] font-semibold text-navy bg-gold hover:bg-[#b8883e] rounded-xl transition-colors shadow-sm">
+          Simpan Booking
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ TOAST NOTIFICATION ══════════════════════ -->
+  <div id="toast-success" class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-emerald-600 text-white px-5 py-3.5 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-[-20px] opacity-0 pointer-events-none">
+    <i data-lucide="check-circle" class="w-5 h-5"></i>
+    <span class="text-[14px] font-semibold">Booking berhasil dibuat. Mengalihkan...</span>
+  </div>
+
+  <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[215px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+
+    <!-- Logo -->
+    <div class="px-6 pt-6 pb-5 border-b border-white/10">
+      <a href="receptionist-dashboard.html" class="block">
+        <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+        <span class="text-[10px] font-semibold text-white/40 tracking-[0.2em] uppercase block mt-0.5">Property Management</span>
+      </a>
+    </div>
+
+    <!-- Profile -->
+    <div class="px-5 py-4 border-b border-white/10 flex items-center gap-3">
+      <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
+           alt="Cengkeh Nirmala"
+           class="w-10 h-10 rounded-full object-cover border-2 border-gold/30 flex-shrink-0" />
+      <div class="min-w-0">
+        <div class="text-[13px] font-semibold text-white leading-tight truncate">Cengkeh Nirmala</div>
+        <span class="text-[10px] font-bold text-navy bg-gold px-2 py-0.5 rounded-full mt-1 inline-block tracking-wide">
+          Receptionist
+        </span>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto no-scrollbar">
+      <a href="receptionist-dashboard.html" class="sb-link">
+        <i data-lucide="layout-dashboard" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="receptionist-incoming-bookings.html" class="sb-link">
+        <i data-lucide="calendar-clock" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Incoming Bookings</span>
+      </a>
+      <a href="receptionist-reservations.html" class="sb-link">
+        <i data-lucide="clipboard-list" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Reservations</span>
+      </a>
+      <a href="receptionist-checkin.html" class="sb-link">
+        <i data-lucide="key" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Check-in / Check-out</span>
+      </a>
+      <a href="receptionist-guests.html" class="sb-link">
+        <i data-lucide="users" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Guest</span>
+      </a>
+      <a href="receptionist-customers.html" class="sb-link">
+        <i data-lucide="user-check" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Customer Data</span>
+      </a>
+    </nav>
+
+    <!-- Bottom -->
+    <div class="px-4 py-5 border-t border-white/10">
+      <a href="login.html"
+         class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Log Out</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[215px] flex flex-col min-h-screen min-w-0">
+
+    <!-- ============================================================
+         STICKY TOPBAR (MOBILE HAMBURGER)
+    ============================================================ -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 lg:hidden shadow-sm">
+      <button id="mobile-menu-btn" class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Sidebar Menu">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+      <span class="font-serif text-[18px] font-bold text-navy">StayEase</span>
+    </header>
+
+    <main class="flex-1 px-8 py-7 max-w-[1240px]">
+
+      <!-- Breadcrumb -->
+      <nav class="flex items-center gap-1.5 text-[13px] text-gray-400 mb-3" aria-label="Breadcrumb">
+        <a href="receptionist-dashboard.html" class="hover:text-navy transition-colors">Dashboard</a>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-300"></i>
+        <span class="font-semibold text-navy">New Booking</span>
+      </nav>
+
+      <!-- Page Heading -->
+      <div class="mb-6">
+        <h1 class="font-serif text-[34px] font-bold text-navy leading-tight mb-1">Buat Booking Baru (Walk-in)</h1>
+        <p class="text-[15px] text-gray-500">Lengkapi detail pemesanan di bawah ini untuk tamu walk-in. Pastikan ketersediaan kamar telah diverifikasi di dashboard.</p>
+      </div>
+
+      <!-- ── MAIN CARD CONTAINER ── -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:divide-x md:divide-gray-100">
+
+          <!-- ════════════ KOLOM KIRI: DATA CUSTOMER ════════════ -->
+          <div class="flex flex-col gap-5 md:pr-4">
+
+            <!-- Section Title -->
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-navy">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+              </div>
+              <h2 class="text-[18px] font-bold text-navy">Data Customer</h2>
+            </div>
+
+            <!-- Toggle Customer Type -->
+            <div class="bg-gray-100/80 p-1 rounded-xl flex items-center gap-1 text-[13px] font-semibold">
+              <button type="button" id="tab-terdaftar"
+                      class="flex-1 py-2 rounded-lg bg-white text-navy shadow-sm transition-all text-center">
+                Customer Terdaftar
+              </button>
+              <button type="button" id="tab-baru"
+                      class="flex-1 py-2 rounded-lg text-gray-500 hover:text-navy transition-all text-center">
+                Customer Baru
+              </button>
+            </div>
+
+            <!-- ── VIEW 1: CUSTOMER TERDAFTAR ── -->
+            <div id="view-terdaftar" class="space-y-4">
+              <div>
+                <label class="block text-[13px] font-medium text-gray-600 mb-1.5">
+                  Cari Nama atau Email Customer
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                  </div>
+                  <input id="customer-search-input"
+                         type="text"
+                         placeholder="Contoh: Kemangi Ardana atau kemangi.ardana@email.com"
+                         class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-[14px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 focus:ring-2 focus:ring-navy/10 transition-all" />
+                </div>
+                <p class="text-[12px] text-gray-400 mt-1.5 italic">
+                  Ketik minimal 3 karakter untuk mulai mencari...
+                </p>
+              </div>
+
+              <!-- Search Result Area (Initial State) -->
+              <div id="search-placeholder" class="border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center flex flex-col items-center justify-center text-gray-400 min-h-[160px]">
+                <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mb-3">
+                  <i data-lucide="user-search" class="w-6 h-6 text-gray-300"></i>
+                </div>
+                <p class="text-[14px] font-medium text-gray-400">Hasil pencarian akan muncul di sini.</p>
+              </div>
+
+              <!-- Search Result Card (Hidden by default) -->
+              <div id="customer-card-result" class="hidden bg-gray-50 border border-gold/30 rounded-2xl p-5 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3.5 min-w-0">
+                  <img id="res-avatar" src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=150&q=80"
+                       alt="Customer Avatar"
+                       class="w-12 h-12 rounded-full object-cover border-2 border-white flex-shrink-0" />
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span id="res-name" class="font-bold text-[15px] text-navy truncate">Kemangi Ardana</span>
+                      <span id="res-badge" class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Gold</span>
+                    </div>
+                    <div id="res-email" class="text-[12px] text-gray-500 truncate">kemangi.ardana@email.com</div>
+                    <div id="res-phone" class="text-[12px] text-gray-400">+62 855 4433 2211</div>
+                  </div>
+                </div>
+                <button type="button" id="btn-select-customer"
+                        class="px-3.5 py-2 bg-navy hover:bg-navy-mid text-white text-[12px] font-semibold rounded-xl transition-colors flex-shrink-0">
+                  Pilih Customer
+                </button>
+              </div>
+            </div>
+
+            <!-- ── VIEW 2: CUSTOMER BARU (Hidden initially) ── -->
+            <div id="view-baru" class="hidden space-y-4">
+              <div>
+                <label class="block text-[13px] font-medium text-gray-700 mb-1">Nama Lengkap <span class="text-red-500">*</span></label>
+                <input id="input-nama" type="text" placeholder="Masukkan nama lengkap customer"
+                       class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:border-navy/30 focus:outline-none" />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[13px] font-medium text-gray-700 mb-1">Email</label>
+                  <input id="input-email" type="email" placeholder="customer@email.com"
+                         class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:border-navy/30 focus:outline-none" />
+                </div>
+                <div>
+                  <label class="block text-[13px] font-medium text-gray-700 mb-1">Nomor HP <span class="text-red-500">*</span></label>
+                  <input id="input-phone" type="tel" placeholder="081234567890"
+                         class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:border-navy/30 focus:outline-none" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[13px] font-medium text-gray-700 mb-1">Jenis Kelamin</label>
+                  <select id="input-gender" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:border-navy/30 focus:outline-none">
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[13px] font-medium text-gray-700 mb-1">Nomor Identitas (KTP)</label>
+                  <input id="input-ktp" type="text" placeholder="3171012345670001"
+                         class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:border-navy/30 focus:outline-none" />
+                </div>
+              </div>
+              <div>
+                <label class="block text-[13px] font-medium text-gray-700 mb-1">Alamat</label>
+                <input id="input-address" type="text" placeholder="Kota/Alamat domisili"
+                       class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:bg-white focus:border-navy/30 focus:outline-none" />
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ════════════ KOLOM KANAN: DATA BOOKING ════════════ -->
+          <div class="flex flex-col gap-5 md:pl-8 mt-6 md:mt-0">
+
+            <!-- Section Title -->
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-navy">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+              </div>
+              <h2 class="text-[18px] font-bold text-navy">Data Booking</h2>
+            </div>
+
+            <!-- Pilih Kamar -->
+            <div>
+              <label class="block text-[13px] font-medium text-gray-600 mb-1.5">Pilih Kamar</label>
+              <select id="select-kamar"
+                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-[14px] text-gray-700 focus:outline-none focus:bg-white focus:border-navy/30 focus:ring-2 focus:ring-navy/10 transition-all">
+                <option value="" disabled selected>Pilih kamar yang tersedia</option>
+                <option value="550000" data-room="Standard 210" data-type="Standard Room">Standard Room (210) – Rp 550.000 / malam</option>
+                <option value="2125000" data-room="Deluxe 304" data-type="Deluxe Room">Deluxe Room (304) – Rp 2.125.000 / malam</option>
+                <option value="1850000" data-room="Deluxe Twin 305" data-type="Deluxe Twin">Deluxe Twin (305) – Rp 1.850.000 / malam</option>
+                <option value="3200000" data-room="Family Room 401" data-type="Family Room">Family Room (401) – Rp 3.200.000 / malam</option>
+                <option value="4250000" data-room="Suite 102" data-type="Executive Suite">Executive Suite (102) – Rp 4.250.000 / malam</option>
+                <option value="8500000" data-room="Presidential 501" data-type="Presidential Suite">Presidential Suite (501) – Rp 8.500.000 / malam</option>
+              </select>
+            </div>
+
+            <!-- Date Pickers -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[13px] font-medium text-gray-600 mb-1.5">Tanggal Check-in</label>
+                <input id="input-checkin" type="date"
+                       class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] text-gray-700 focus:bg-white focus:border-navy/30 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-[13px] font-medium text-gray-600 mb-1.5">Tanggal Check-out</label>
+                <input id="input-checkout" type="date"
+                       class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[14px] text-gray-700 focus:bg-white focus:border-navy/30 focus:outline-none" />
+              </div>
+            </div>
+
+            <!-- Auto Calculation Card -->
+            <div class="bg-[#F8F9FA] rounded-2xl p-5 border border-gray-100 space-y-2">
+              <div class="flex justify-between items-center text-[14px]">
+                <span class="text-gray-500 font-medium">Jumlah Malam:</span>
+                <span id="calc-nights" class="font-bold text-navy">- malam</span>
+              </div>
+              <div class="flex justify-between items-center text-[14px]">
+                <span class="text-gray-500 font-medium">Total Harga:</span>
+                <span id="calc-total" class="font-bold text-[18px] text-navy">Rp -</span>
+              </div>
+            </div>
+
+            <!-- Status Booking Awal -->
+            <div>
+              <label class="block text-[13px] font-medium text-gray-600 mb-2">Status Booking Awal</label>
+              <div class="grid grid-cols-2 gap-3">
+                <label class="status-option cursor-pointer">
+                  <input type="radio" name="status_booking" value="Pending" class="hidden peer" />
+                  <div class="py-3 px-4 text-center rounded-xl border border-gray-200 bg-white text-[14px] font-semibold text-gray-600 peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-navy transition-all">
+                    Pending
+                  </div>
+                </label>
+                <label class="status-option cursor-pointer">
+                  <input type="radio" name="status_booking" value="Confirmed" checked class="hidden peer" />
+                  <div class="py-3 px-4 text-center rounded-xl border-2 border-gold bg-[#F9F3E5] text-[14px] font-bold text-navy peer-checked:border-gold peer-checked:bg-[#F9F3E5] peer-checked:text-navy transition-all shadow-sm">
+                    Confirmed
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Warning Box -->
+            <div class="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start gap-3 text-red-600 text-[13px] leading-relaxed">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0"></i>
+              <span>Sistem akan menolak booking jika kamar sudah memiliki booking aktif pada rentang tanggal yang sama.</span>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── FOOTER ACTIONS (Bottom Right) ── -->
+      <div class="flex items-center justify-end gap-3 mb-10">
+        <a href="receptionist-dashboard.html"
+           class="px-6 py-3 border border-navy text-navy hover:bg-navy/5 text-[14px] font-semibold rounded-xl transition-colors">
+          Batal
+        </a>
+        <button id="btn-simpan-booking" type="button"
+                class="px-6 py-3 bg-[#F3D07C] hover:bg-gold text-navy text-[14px] font-bold rounded-xl transition-colors shadow-sm flex items-center gap-2">
+          <i data-lucide="save" class="w-4 h-4"></i>
+          <span>Simpan Booking</span>
+        </button>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════ JAVASCRIPT ══════════════════════ -->
+  <script>
+    lucide.createIcons();
+
+    // Set default dates: checkin today, checkout in 2 days
+    const today = new Date();
+    const after2 = new Date(today);
+    after2.setDate(today.getDate() + 2);
+
+    const checkinInput  = document.getElementById('input-checkin');
+    const checkoutInput = document.getElementById('input-checkout');
+    const selectKamar   = document.getElementById('select-kamar');
+    const calcNights    = document.getElementById('calc-nights');
+    const calcTotal     = document.getElementById('calc-total');
+
+    checkinInput.value  = today.toISOString().split('T')[0];
+    checkoutInput.value = after2.toISOString().split('T')[0];
+
+    // Auto Calculation Logic
+    function recalculate() {
+      const pricePerNight = parseInt(selectKamar.value || '0', 10);
+      const d1 = new Date(checkinInput.value);
+      const d2 = new Date(checkoutInput.value);
+
+      if (pricePerNight > 0 && d2 > d1) {
+        const diffTime = Math.abs(d2 - d1);
+        const nights   = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const subtotal = pricePerNight * nights;
+        const tax      = subtotal * 0.10;
+        const total    = subtotal + tax;
+
+        calcNights.textContent = `${nights} malam`;
+        calcTotal.textContent  = `Rp ${total.toLocaleString('id-ID')}`;
+      } else if (pricePerNight > 0) {
+        calcNights.textContent = `1 malam`;
+        calcTotal.textContent  = `Rp ${(pricePerNight * 1.1).toLocaleString('id-ID')}`;
+      } else {
+        calcNights.textContent = `- malam`;
+        calcTotal.textContent  = `Rp -`;
+      }
+    }
+
+    selectKamar.addEventListener('change', recalculate);
+    checkinInput.addEventListener('change', recalculate);
+    checkoutInput.addEventListener('change', recalculate);
+
+    // ── Toggle Customer Terdaftar vs Baru ──
+    const tabTerdaftar = document.getElementById('tab-terdaftar');
+    const tabBaru      = document.getElementById('tab-baru');
+    const viewTerdaftar= document.getElementById('view-terdaftar');
+    const viewBaru     = document.getElementById('view-baru');
+
+    tabTerdaftar.addEventListener('click', () => {
+      tabTerdaftar.className = 'flex-1 py-2 rounded-lg bg-white text-navy shadow-sm transition-all text-center';
+      tabBaru.className      = 'flex-1 py-2 rounded-lg text-gray-500 hover:text-navy transition-all text-center';
+      viewTerdaftar.classList.remove('hidden');
+      viewBaru.classList.add('hidden');
+    });
+
+    tabBaru.addEventListener('click', () => {
+      tabBaru.className      = 'flex-1 py-2 rounded-lg bg-white text-navy shadow-sm transition-all text-center';
+      tabTerdaftar.className = 'flex-1 py-2 rounded-lg text-gray-500 hover:text-navy transition-all text-center';
+      viewBaru.classList.remove('hidden');
+      viewTerdaftar.classList.add('hidden');
+    });
+
+    // ── Real-time Search Customer ──
+    const searchInput      = document.getElementById('customer-search-input');
+    const searchPlaceholder= document.getElementById('search-placeholder');
+    const cardResult       = document.getElementById('customer-card-result');
+    const btnSelectCust    = document.getElementById('btn-select-customer');
+    let isCustomerSelected = false;
+
+    searchInput.addEventListener('input', function () {
+      const q = this.value.trim().toLowerCase();
+      if (q.length >= 3) {
+        searchPlaceholder.classList.add('hidden');
+        cardResult.classList.remove('hidden');
+      } else {
+        searchPlaceholder.classList.remove('hidden');
+        cardResult.classList.add('hidden');
+      }
+    });
+
+    btnSelectCust.addEventListener('click', function () {
+      isCustomerSelected = true;
+      this.textContent = '✓ Terpilih';
+      this.className = 'px-3.5 py-2 bg-emerald-600 text-white text-[12px] font-semibold rounded-xl transition-colors flex-shrink-0';
+    });
+
+    // ── Save Booking Modal & Redirect ──
+    const btnSimpan    = document.getElementById('btn-simpan-booking');
+    const confirmModal = document.getElementById('confirm-modal');
+    const modalBatal   = document.getElementById('modal-batal');
+    const modalSubmit  = document.getElementById('modal-submit');
+    const toast        = document.getElementById('toast-success');
+
+    btnSimpan.addEventListener('click', () => {
+      confirmModal.classList.remove('hidden');
+    });
+
+    modalBatal.addEventListener('click', () => {
+      confirmModal.classList.add('hidden');
+    });
+
+    modalSubmit.addEventListener('click', () => {
+      confirmModal.classList.add('hidden');
+
+      // Show toast
+      toast.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+
+      // Check selected status
+      const status = document.querySelector('input[name="status_booking"]:checked')?.value || 'Confirmed';
+
+      setTimeout(() => {
+        if (status === 'Pending') {
+          window.location.href = 'receptionist-incoming-bookings.html';
+        } else {
+          window.location.href = 'receptionist-reservations.html';
+        }
+      }, 1500);
+    });
+
+    confirmModal.addEventListener('click', e => {
+      if (e.target === confirmModal) confirmModal.classList.add('hidden');
+    });
+  </script>
+
+  <script>
+    // Mobile Sidebar Toggle
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+</body>
+</html>

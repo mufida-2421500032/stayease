@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buat Akun Baru – StayEase</title>
+  <meta name="description" content="Halaman pendaftaran akun baru customer StayEase Hotel Management & Reservation." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Tailwind custom config (identical tokens across all pages) -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:  '#183654',
+            cream: '#FCF9F5',
+            gold:  '#C9974D',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      html, body {
+        height: 100%;
+        font-family: 'Inter', sans-serif;
+      }
+    }
+  </style>
+</head>
+
+<body class="relative min-h-screen w-full flex items-center justify-center bg-gray-900 font-sans antialiased p-4 py-8">
+
+  <!-- ============================================================
+       BACKGROUND IMAGE WITH OVERLAY & BLUR
+  ============================================================ -->
+  <div class="fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+    <img src="hero_hotel.png"
+         alt="Background Lobi Hotel StayEase"
+         class="w-full h-full object-cover filter blur-md scale-105 opacity-80" />
+    <div class="absolute inset-0 bg-black/40"></div>
+  </div>
+
+  <!-- ============================================================
+       REGISTER CARD (FLOATING CENTER)
+  ============================================================ -->
+  <main class="relative z-10 w-full max-w-[460px] mx-auto my-auto flex flex-col gap-4">
+    <!-- Back Link -->
+    <a href="index.html" class="flex items-center gap-1.5 text-[14px] font-semibold text-white/80 hover:text-white transition-colors w-fit pl-1">
+      <i data-lucide="chevron-left" class="w-4 h-4"></i>
+      <span>Back</span>
+    </a>
+
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden border-b-4 border-gold p-8 md:p-10">
+
+      <!-- Logo Mark -->
+      <div class="flex justify-center mb-5">
+        <div class="w-20 h-20 bg-[#FCF7EF] rounded-xl flex flex-col items-center justify-center p-2 shadow-sm border border-gold/10">
+          <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 6C15.1634 6 8 13.1634 8 22V38C8 39.1046 8.89543 40 10 40H38C39.1046 40 40 39.1046 40 38V22C40 13.1634 32.8366 6 24 6Z" stroke="#183654" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M18 22C18 18.6863 20.6863 16 24 16C27.3137 16 30 18.6863 30 22C30 24.5 28.2 26.6 25.8 27.5V33H22.2V27.5C19.8 26.6 18 24.5 18 22Z" fill="#C9974D"/>
+            <path d="M26 30H34V34H26V30Z" fill="#183654"/>
+          </svg>
+          <span class="text-[10px] font-bold text-navy font-serif tracking-tight mt-1">StayEase</span>
+        </div>
+      </div>
+
+      <!-- Header Teks -->
+      <div class="text-center mb-6">
+        <h1 class="font-serif text-[22px] md:text-[24px] font-bold text-navy leading-tight">
+          Buat Akun Baru
+        </h1>
+      </div>
+
+      <!-- Form Registrasi -->
+      <form id="register-form" action="#" method="POST" class="space-y-4" onsubmit="return false;">
+
+        <!-- Nama Lengkap -->
+        <div>
+          <label for="fullname" class="block text-[13px] font-medium text-gray-700 mb-1.5">
+            Nama Lengkap
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+              <i data-lucide="user" class="w-4 h-4" aria-hidden="true"></i>
+            </div>
+            <input type="text"
+                   id="fullname"
+                   name="fullname"
+                   required
+                   placeholder="Kemangi Ardana"
+                   class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg text-[14px] text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy transition-all" />
+          </div>
+        </div>
+
+        <!-- Email (dengan contoh State Error) -->
+        <div>
+          <label for="email" class="block text-[13px] font-medium text-gray-700 mb-1.5">
+            Email
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-red-500">
+              <i data-lucide="mail" class="w-4 h-4" aria-hidden="true"></i>
+            </div>
+            <input type="email"
+                   id="email"
+                   name="email"
+                   required
+                   value="kemangi.ardana@mail.com"
+                   placeholder="nama@domain.com"
+                   class="w-full pl-10 pr-4 py-2.5 bg-white border border-red-500 rounded-lg text-[14px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all" />
+          </div>
+          <p class="text-[12px] text-red-600 mt-1">Format email tidak valid</p>
+        </div>
+
+        <!-- Nomor Telepon -->
+        <div>
+          <label for="phone" class="block text-[13px] font-medium text-gray-700 mb-1.5">
+            Nomor Telepon
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+              <i data-lucide="phone" class="w-4 h-4" aria-hidden="true"></i>
+            </div>
+            <input type="tel"
+                   id="phone"
+                   name="phone"
+                   placeholder="+62 812 ..."
+                   class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg text-[14px] text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy transition-all" />
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-[13px] font-medium text-gray-700 mb-1.5">
+            Password
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+              <i data-lucide="lock" class="w-4 h-4" aria-hidden="true"></i>
+            </div>
+            <input type="password"
+                   id="password"
+                   name="password"
+                   required
+                   placeholder="••••••••"
+                   class="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-300 rounded-lg text-[14px] text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy transition-all" />
+            <button type="button"
+                    id="toggle-password"
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Tampilkan atau sembunyikan password">
+              <i data-lucide="eye" id="eye-icon-1" class="w-4 h-4" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Konfirmasi Password -->
+        <div>
+          <label for="confirm-password" class="block text-[13px] font-medium text-gray-700 mb-1.5">
+            Konfirmasi Password
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+              <i data-lucide="lock" class="w-4 h-4" aria-hidden="true"></i>
+            </div>
+            <input type="password"
+                   id="confirm-password"
+                   name="confirm_password"
+                   required
+                   placeholder="••••••••"
+                   class="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-300 rounded-lg text-[14px] text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy transition-all" />
+            <button type="button"
+                    id="toggle-confirm-password"
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Tampilkan atau sembunyikan konfirmasi password">
+              <i data-lucide="eye" id="eye-icon-2" class="w-4 h-4" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tombol Daftar Sekarang -->
+        <div class="pt-3">
+          <a href="login.html"
+             id="btn-submit-register"
+             class="w-full bg-navy hover:bg-[#10273d] text-white font-bold text-[16px] py-3 rounded-lg transition-colors duration-150 shadow-md text-center block">
+            Daftar Sekarang
+          </a>
+        </div>
+
+      </form>
+
+      <!-- Link Login -->
+      <div class="mt-5 text-center text-[13px] text-gray-600">
+        Sudah punya akun?
+        <a href="login.html" id="link-login" class="text-gold font-semibold hover:underline ml-1">
+          Masuk di sini
+        </a>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="mt-6 text-center text-[11px] text-gray-400 leading-relaxed max-w-[340px] mx-auto">
+        Dengan mendaftar, Anda menyetujui
+        <a href="#" class="underline hover:text-gray-600">Syarat & Ketentuan</a>
+        serta
+        <a href="#" class="underline hover:text-gray-600">Kebijakan Privasi</a>
+        StayEase.
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ============================================================
+       JAVASCRIPT — Toggle password & confirm password visibility
+  ============================================================ -->
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Toggle Password Visibility helper
+    function setupPasswordToggle(buttonId, inputId, iconId) {
+      const btn = document.getElementById(buttonId);
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+
+      if (btn && input && icon) {
+        btn.addEventListener('click', function () {
+          const isPass = input.getAttribute('type') === 'password';
+          input.setAttribute('type', isPass ? 'text' : 'password');
+          icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
+          lucide.createIcons();
+        });
+      }
+    }
+
+    setupPasswordToggle('toggle-password', 'password', 'eye-icon-1');
+    setupPasswordToggle('toggle-confirm-password', 'confirm-password', 'eye-icon-2');
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Executive Suite – Detail Kamar | StayEase</title>
+  <meta name="description" content="Executive Suite di StayEase – suite eksklusif dengan pemandangan kota panoramik, fasilitas premium, AC, WiFi, TV, dan sarapan. Pesan sekarang." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Tailwind custom config (identical tokens across all pages) -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:  '#0F2A44',
+            cream: '#FCF9F5',
+            gold:  '#C9974D',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+          maxWidth: {
+            container: '1280px',
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      html { scroll-behavior: smooth; }
+      body { background-color: #FCF9F5; font-family: 'Inter', sans-serif; }
+    }
+
+    @layer components {
+      /* ── Navbar ── */
+      .nav-link {
+        @apply text-[14px] font-medium text-gray-700 hover:text-navy transition-colors duration-150;
+      }
+      .nav-link-active {
+        @apply text-[14px] font-semibold text-navy border-b-2 border-gold pb-0.5;
+      }
+
+      /* ── Buttons ── */
+      .btn-navy {
+        @apply bg-navy text-white font-semibold text-[14px] px-5 py-2 rounded-lg
+               hover:bg-[#1a3a5c] transition-colors duration-150;
+      }
+      .btn-outline-navy {
+        @apply border border-navy text-navy font-semibold text-[14px] px-5 py-2 rounded-lg
+               bg-white hover:bg-navy hover:text-white transition-colors duration-150;
+      }
+
+      /* ── Facility box ── */
+      .facility-box {
+        @apply flex flex-col items-center justify-center gap-1.5
+               bg-[#F5F0EC] rounded-xl px-3 py-4 text-center;
+      }
+
+      /* ── Recommendation card ── */
+      .rec-card {
+        @apply bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden
+               flex flex-col hover:shadow-md hover:-translate-y-0.5 transition-all duration-200;
+      }
+
+      /* ── Footer navy (unique to this page) ── */
+      .footer-nav-heading {
+        @apply text-[14px] font-bold text-white mb-4;
+      }
+      .footer-nav-link {
+        @apply block text-[13px] text-gray-400 hover:text-white transition-colors duration-150 mb-2;
+      }
+      .footer-contact-row {
+        @apply flex items-center gap-2.5 text-[13px] text-gray-400 mb-2;
+      }
+    }
+  </style>
+</head>
+
+<body class="antialiased">
+
+  <!-- ============================================================
+       NAVBAR (identical structure; active = Daftar Kamar)
+  ============================================================ -->
+  <header id="site-header"
+          class="fixed top-0 inset-x-0 z-50 bg-white border-b border-gray-100 transition-shadow duration-300"
+          role="banner">
+    <div class="max-w-container mx-auto px-6 lg:px-10">
+      <nav class="flex items-center justify-between h-[60px]"
+           role="navigation" aria-label="Navigasi Utama">
+
+        <!-- Logo -->
+        <a href="index.html" id="nav-logo"
+           class="flex items-center gap-2 flex-shrink-0"
+           aria-label="StayEase – Halaman Utama">
+          <div class="w-8 h-8 bg-navy rounded-md flex items-center justify-center flex-shrink-0">
+            <span class="text-gold font-bold text-[13px] leading-none font-serif">SE</span>
+          </div>
+          <span class="text-[17px] font-bold text-navy tracking-tight font-serif">StayEase</span>
+        </a>
+
+        <!-- Desktop nav links -->
+        <ul class="hidden md:flex items-center gap-7" role="list">
+          <li>
+            <a href="index.html" id="nav-beranda" class="nav-link">Beranda</a>
+          </li>
+          <li>
+            <a href="rooms.html" id="nav-daftar-kamar" class="nav-link-active" aria-current="true">
+              Daftar Kamar
+            </a>
+          </li>
+        </ul>
+
+        <!-- Auth buttons -->
+        <div class="hidden md:flex items-center gap-3">
+          <a href="login.html" id="btn-masuk"
+             class="text-[14px] font-medium text-navy hover:underline transition-colors">
+            Masuk
+          </a>
+          <a href="register.html" id="btn-daftar" class="btn-navy">Daftar</a>
+        </div>
+
+        <!-- Mobile hamburger -->
+        <button id="hamburger-btn"
+                class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Buka menu navigasi"
+                aria-expanded="false"
+                aria-controls="mobile-menu">
+          <i data-lucide="menu" class="w-5 h-5 text-navy" aria-hidden="true"></i>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Mobile menu -->
+    <div id="mobile-menu"
+         class="md:hidden hidden border-t border-gray-100 bg-white shadow-md"
+         role="dialog" aria-label="Menu Mobile">
+      <ul class="flex flex-col px-6 py-3 gap-0.5" role="list">
+        <li>
+          <a href="index.html" id="mob-beranda"
+             class="block py-3 text-[15px] text-gray-700 border-b border-gray-100 hover:text-navy">
+            Beranda
+          </a>
+        </li>
+        <li>
+          <a href="rooms.html" id="mob-daftar-kamar"
+             class="block py-3 text-[15px] font-semibold text-navy border-b border-gray-100">
+            Daftar Kamar
+          </a>
+        </li>
+        <li class="pt-3 pb-2 flex flex-col gap-2">
+          <a href="login.html" id="mob-masuk"
+             class="block text-center py-2.5 text-[14px] font-medium text-navy border border-navy rounded-lg hover:bg-gray-50">
+            Masuk
+          </a>
+          <a href="register.html" id="mob-daftar" class="btn-navy text-center block">Daftar</a>
+        </li>
+      </ul>
+    </div>
+  </header>
+  <!-- end NAVBAR -->
+
+
+  <main class="pt-[60px]">
+
+    <!-- ============================================================
+         BREADCRUMB
+    ============================================================ -->
+    <nav id="breadcrumb"
+         class="max-w-container mx-auto px-6 lg:px-10 py-4"
+         aria-label="Breadcrumb">
+      <ol class="flex items-center gap-1.5 text-[13px]" role="list">
+        <li>
+          <a href="index.html" id="bc-beranda"
+             class="text-gray-500 hover:text-navy transition-colors">
+            Beranda
+          </a>
+        </li>
+        <li class="text-gray-400" aria-hidden="true">›</li>
+        <li>
+          <a href="rooms.html" id="bc-daftar-kamar"
+             class="text-gray-500 hover:text-navy transition-colors">
+            Daftar Kamar
+          </a>
+        </li>
+        <li class="text-gray-400" aria-hidden="true">›</li>
+        <li>
+          <span id="bc-current" class="font-bold text-navy" aria-current="page">Executive Suite</span>
+        </li>
+      </ol>
+    </nav>
+    <!-- end BREADCRUMB -->
+
+
+    <!-- ============================================================
+         DETAIL SECTION — two-column layout
+    ============================================================ -->
+    <section id="room-detail"
+             class="max-w-container mx-auto px-6 lg:px-10 pb-12 md:pb-16"
+             aria-label="Detail Executive Suite">
+
+      <div class="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start">
+
+        <!-- ── LEFT COLUMN: main image + thumbnails ── -->
+        <div id="gallery-col" class="w-full lg:w-[58%] flex-shrink-0">
+
+          <!-- Main image -->
+          <div class="relative rounded-2xl overflow-hidden">
+            <img id="main-image"
+                 src="room_suite.png"
+                 alt="Executive Suite – tampilan utama kamar"
+                 class="w-full h-[300px] md:h-[400px] lg:h-[380px] object-cover" />
+            <!-- "Featured Suite" badge – top-left -->
+            <span class="absolute top-4 left-4 bg-gold text-white text-[12px] font-semibold
+                         px-3 py-1 rounded-full leading-none">
+              Featured Suite
+            </span>
+          </div>
+
+          <!-- 4 Thumbnails -->
+          <div id="thumbnail-row" class="flex gap-3 mt-3">
+
+            <button id="thumb-1"
+                    type="button"
+                    class="flex-1 rounded-xl overflow-hidden border-2 border-gold focus:outline-none focus:ring-2 focus:ring-gold/50"
+                    aria-label="Thumbnail 1 – tampilan utama kamar">
+              <img src="room_suite.png"
+                   alt="Executive Suite – tampilan 1"
+                   class="w-full h-[72px] md:h-[88px] object-cover" />
+            </button>
+
+            <button id="thumb-2"
+                    type="button"
+                    class="flex-1 rounded-xl overflow-hidden border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-gold/50 opacity-80 hover:opacity-100 transition-opacity"
+                    aria-label="Thumbnail 2 – ruang duduk suite">
+              <img src="room_deluxe.png"
+                   alt="Executive Suite – tampilan 2"
+                   class="w-full h-[72px] md:h-[88px] object-cover" />
+            </button>
+
+            <button id="thumb-3"
+                    type="button"
+                    class="flex-1 rounded-xl overflow-hidden border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-gold/50 opacity-80 hover:opacity-100 transition-opacity"
+                    aria-label="Thumbnail 3 – area kerja suite">
+              <img src="room_twin.png"
+                   alt="Executive Suite – tampilan 3"
+                   class="w-full h-[72px] md:h-[88px] object-cover" />
+            </button>
+
+            <button id="thumb-4"
+                    type="button"
+                    class="flex-1 rounded-xl overflow-hidden border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-gold/50 opacity-80 hover:opacity-100 transition-opacity"
+                    aria-label="Thumbnail 4 – balkon suite">
+              <img src="room_standard.png"
+                   alt="Executive Suite – tampilan 4"
+                   class="w-full h-[72px] md:h-[88px] object-cover" />
+            </button>
+
+          </div>
+        </div>
+        <!-- end LEFT COLUMN -->
+
+
+        <!-- ── RIGHT COLUMN: info card ── -->
+        <div id="info-col"
+             class="w-full lg:flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-7">
+
+          <!-- Name + Price header row -->
+          <div class="flex items-start justify-between gap-4 mb-3">
+            <!-- Room name (serif) -->
+            <h1 class="font-serif text-[22px] md:text-[24px] font-bold text-navy leading-tight">
+              Executive Suite
+            </h1>
+            <!-- Price block – right aligned -->
+            <div class="text-right flex-shrink-0">
+              <span class="block text-[12px] font-semibold text-gray-400 leading-none mb-0.5">Rp</span>
+              <span class="block text-[28px] font-bold text-gold leading-none">2.800.000</span>
+              <span class="block text-[12px] text-gray-400 mt-0.5">per malam</span>
+            </div>
+          </div>
+
+          <!-- Rating row -->
+          <div class="flex items-center gap-2 mb-4">
+            <!-- 5 stars -->
+            <div class="flex items-center gap-0.5" aria-label="Rating 5 bintang">
+              <i data-lucide="star" class="w-4 h-4 text-gold fill-current" aria-hidden="true"></i>
+              <i data-lucide="star" class="w-4 h-4 text-gold fill-current" aria-hidden="true"></i>
+              <i data-lucide="star" class="w-4 h-4 text-gold fill-current" aria-hidden="true"></i>
+              <i data-lucide="star" class="w-4 h-4 text-gold fill-current" aria-hidden="true"></i>
+              <i data-lucide="star" class="w-4 h-4 text-gold fill-current" aria-hidden="true"></i>
+            </div>
+            <span class="text-[13px] text-gray-400">(128 Reviews)</span>
+          </div>
+
+          <!-- Description (English, as per reference image) -->
+          <p class="text-[14px] text-gray-500 leading-relaxed mb-5">
+            Experience the pinnacle of luxury in our Executive Suite. Designed for the
+            discerning traveler, this spacious sanctuary offers a harmonious blend of
+            modern sophistication and timeless elegance. Each detail, from the
+            hand-selected furnishings to the premium thread-count linens, has been
+            curated to provide an unparalleled level of comfort and serenity.
+          </p>
+
+          <!-- Room Facilities heading -->
+          <h2 class="text-[16px] font-semibold text-navy mb-3">Room Facilities</h2>
+
+          <!-- Facility boxes — 3 cols grid (AC, WiFi, TV row 1 · Breakfast row 2) -->
+          <div class="grid grid-cols-3 gap-3 mb-5">
+
+            <div id="fac-ac" class="facility-box" role="img" aria-label="AC">
+              <i data-lucide="snowflake" class="w-5 h-5 text-navy" aria-hidden="true"></i>
+              <span class="text-[13px] font-medium text-gray-600">AC</span>
+            </div>
+
+            <div id="fac-wifi" class="facility-box" role="img" aria-label="WiFi">
+              <i data-lucide="wifi" class="w-5 h-5 text-navy" aria-hidden="true"></i>
+              <span class="text-[13px] font-medium text-gray-600">WiFi</span>
+            </div>
+
+            <div id="fac-tv" class="facility-box" role="img" aria-label="TV">
+              <i data-lucide="tv" class="w-5 h-5 text-navy" aria-hidden="true"></i>
+              <span class="text-[13px] font-medium text-gray-600">TV</span>
+            </div>
+
+            <!-- Breakfast – row 2, only 1 item -->
+            <div id="fac-breakfast" class="facility-box" role="img" aria-label="Breakfast">
+              <i data-lucide="utensils" class="w-5 h-5 text-navy" aria-hidden="true"></i>
+              <span class="text-[13px] font-medium text-gray-600">Breakfast</span>
+            </div>
+
+          </div>
+
+          <!-- Availability status -->
+          <div id="availability-status" class="flex items-center gap-2 mb-5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" aria-hidden="true"></span>
+            <span class="text-[13px] font-bold text-emerald-600 uppercase tracking-wide">
+              Tersedia
+            </span>
+          </div>
+
+          <!-- Book button -->
+          <a href="login.html"
+             id="btn-pesan"
+             class="btn-navy w-full py-3 text-[15px] font-semibold text-center rounded-xl mb-3 block">
+            Pesan Kamar Ini
+          </a>
+
+          <!-- Info note below button -->
+          <p id="booking-note" class="text-[12px] text-gray-400 text-center flex items-center justify-center gap-1.5">
+            <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true"></i>
+            Masuk untuk melanjutkan booking
+          </p>
+
+        </div>
+        <!-- end RIGHT COLUMN -->
+
+      </div>
+    </section>
+    <!-- end DETAIL SECTION -->
+
+
+    <!-- ============================================================
+         SECTION KAMAR LAINNYA
+    ============================================================ -->
+    <section id="other-rooms"
+             class="max-w-container mx-auto px-6 lg:px-10 pb-16 md:pb-20"
+             aria-labelledby="other-rooms-heading">
+
+      <!-- Section header row -->
+      <div class="flex items-center justify-between mb-6">
+        <h2 id="other-rooms-heading"
+            class="text-[18px] font-semibold text-gold">
+          Kamar Lainnya
+        </h2>
+        <a href="rooms.html" id="link-view-all"
+           class="text-[14px] font-medium text-gold hover:text-[#b8883e] transition-colors inline-flex items-center gap-1">
+          View All Rooms
+          <i data-lucide="arrow-right" class="w-4 h-4" aria-hidden="true"></i>
+        </a>
+      </div>
+
+      <!-- 3 recommendation cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- Rec card 1: Deluxe Twin Room -->
+        <article id="rec-deluxe-twin" class="rec-card" aria-label="Deluxe Twin Room">
+          <div class="relative">
+            <img src="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=800&q=80"
+                 alt="Deluxe Twin Room"
+                 class="w-full h-44 object-cover" loading="lazy" />
+            <!-- Price badge – white pill, top-right -->
+            <span class="absolute top-3 right-3 bg-white text-navy text-[12px] font-bold
+                         px-2.5 py-1 rounded-full shadow-sm leading-none">
+              Rp 2.200k
+            </span>
+          </div>
+          <div class="p-4 flex flex-col flex-1">
+            <h3 class="text-[16px] font-semibold text-navy mb-2">Deluxe Twin Room</h3>
+            <!-- Guests & area info row -->
+            <div class="flex items-center gap-4 text-[13px] text-gray-500 mb-4">
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="users" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                2 Guests
+              </span>
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="maximize-2" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                32 m²
+              </span>
+            </div>
+            <div class="mt-auto">
+              <a href="room-detail.html" id="rec-btn-deluxe-twin"
+                 class="btn-outline-navy w-full text-center block py-2.5">
+                Lihat Detail
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Rec card 2: Family Suite Garden -->
+        <article id="rec-family-suite" class="rec-card" aria-label="Family Suite Garden">
+          <div class="relative">
+            <img src="https://images.unsplash.com/photo-1596436889106-be35e843f974?auto=format&fit=crop&w=800&q=80"
+                 alt="Family Suite Garden"
+                 class="w-full h-44 object-cover" loading="lazy" />
+            <span class="absolute top-3 right-3 bg-white text-navy text-[12px] font-bold
+                         px-2.5 py-1 rounded-full shadow-sm leading-none">
+              Rp 3.500k
+            </span>
+          </div>
+          <div class="p-4 flex flex-col flex-1">
+            <h3 class="text-[16px] font-semibold text-navy mb-2">Family Suite Garden</h3>
+            <div class="flex items-center gap-4 text-[13px] text-gray-500 mb-4">
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="users" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                4 Guests
+              </span>
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="maximize-2" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                64 m²
+              </span>
+            </div>
+            <div class="mt-auto">
+              <a href="room-detail.html" id="rec-btn-family-suite"
+                 class="btn-outline-navy w-full text-center block py-2.5">
+                Lihat Detail
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Rec card 3: Standard Queen Room -->
+        <article id="rec-standard" class="rec-card" aria-label="Standard Queen Room">
+          <div class="relative">
+            <img src="room_standard.png"
+                 alt="Standard Queen Room"
+                 class="w-full h-44 object-cover" loading="lazy" />
+            <span class="absolute top-3 right-3 bg-white text-navy text-[12px] font-bold
+                         px-2.5 py-1 rounded-full shadow-sm leading-none">
+              Rp 850k
+            </span>
+          </div>
+          <div class="p-4 flex flex-col flex-1">
+            <h3 class="text-[16px] font-semibold text-navy mb-2">Standard Queen Room</h3>
+            <div class="flex items-center gap-4 text-[13px] text-gray-500 mb-4">
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="users" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                2 Guests
+              </span>
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="maximize-2" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                24 m²
+              </span>
+            </div>
+            <div class="mt-auto">
+              <a href="room-detail.html" id="rec-btn-standard"
+                 class="btn-outline-navy w-full text-center block py-2.5">
+                Lihat Detail
+              </a>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+    <!-- end SECTION KAMAR LAINNYA -->
+
+  </main>
+
+
+  <!-- ============================================================
+       FOOTER — NAVY DARK (unique to this page; different from index/rooms)
+  ============================================================ -->
+  <footer id="site-footer-navy" class="bg-navy" role="contentinfo">
+
+    <!-- 4-column content area -->
+    <div class="max-w-container mx-auto px-6 lg:px-10 py-12 md:py-14">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+
+        <!-- Col 1: Brand -->
+        <div>
+          <!-- Logo (gold variant on navy bg) -->
+          <a href="index.html" id="footer-navy-logo"
+             class="inline-flex items-center gap-2 mb-4"
+             aria-label="StayEase">
+            <div class="w-8 h-8 bg-gold rounded-md flex items-center justify-center flex-shrink-0">
+              <span class="text-navy font-bold text-[13px] leading-none font-serif">SE</span>
+            </div>
+            <span class="text-[17px] font-bold text-white tracking-tight font-serif">StayEase</span>
+          </a>
+          <p class="text-[13px] text-gray-400 leading-relaxed max-w-[220px]">
+            Redefining modern hospitality management with seamless technology and boutique elegance.
+          </p>
+        </div>
+
+        <!-- Col 2: Quick Links -->
+        <div>
+          <h3 class="footer-nav-heading">Quick Links</h3>
+          <ul role="list">
+            <li><a href="#" id="fn-about"   class="footer-nav-link">About Us</a></li>
+            <li><a href="rooms.html" id="fn-rooms" class="footer-nav-link">Room Collections</a></li>
+            <li><a href="#" id="fn-offers"  class="footer-nav-link">Special Offers</a></li>
+            <li><a href="#" id="fn-support" class="footer-nav-link">Contact Support</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 3: Policies -->
+        <div>
+          <h3 class="footer-nav-heading">Policies</h3>
+          <ul role="list">
+            <li><a href="#" id="fn-privacy"  class="footer-nav-link">Privacy Policy</a></li>
+            <li><a href="#" id="fn-terms"    class="footer-nav-link">Terms of Service</a></li>
+            <li><a href="#" id="fn-refund"   class="footer-nav-link">Refund Policy</a></li>
+            <li><a href="#" id="fn-faq"      class="footer-nav-link">FAQ</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 4: Contact -->
+        <div>
+          <h3 class="footer-nav-heading">Contact</h3>
+          <ul role="list">
+            <li class="footer-contact-row">
+              <i data-lucide="mail" class="w-4 h-4 text-gray-500 flex-shrink-0" aria-hidden="true"></i>
+              <a href="mailto:info@stayease.com" id="fn-email"
+                 class="hover:text-white transition-colors">
+                info@stayease.com
+              </a>
+            </li>
+            <li class="footer-contact-row">
+              <i data-lucide="phone" class="w-4 h-4 text-gray-500 flex-shrink-0" aria-hidden="true"></i>
+              <a href="tel:+6281234567890" id="fn-phone"
+                 class="hover:text-white transition-colors">
+                +62 812 3456 7890
+              </a>
+            </li>
+            <li class="footer-contact-row">
+              <i data-lucide="map-pin" class="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" aria-hidden="true"></i>
+              <span>Probolinggo, Indonesia</span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Divider + copyright bar -->
+    <div class="border-t border-white/10">
+      <div class="max-w-container mx-auto px-6 lg:px-10 py-4
+                  flex flex-col sm:flex-row items-center justify-between gap-3">
+        <p class="text-[12px] text-gray-500 text-center sm:text-left">
+          &copy; 2026 StayEase Hotel Management. All rights reserved.
+        </p>
+        <!-- Globe + email icons on right -->
+        <div class="flex items-center gap-3">
+          <a href="#" id="fn-copyright-globe"
+             class="text-gray-500 hover:text-white transition-colors"
+             aria-label="Website StayEase">
+            <i data-lucide="globe" class="w-4 h-4" aria-hidden="true"></i>
+          </a>
+          <a href="mailto:info@stayease.com" id="fn-copyright-email"
+             class="text-gray-500 hover:text-white transition-colors"
+             aria-label="Email StayEase">
+            <i data-lucide="at-sign" class="w-4 h-4" aria-hidden="true"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </footer>
+  <!-- end FOOTER NAVY -->
+
+
+  <!-- ============================================================
+       JAVASCRIPT — hamburger toggle + navbar shadow + thumbnail switcher
+  ============================================================ -->
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // ── Hamburger menu toggle ──
+    (function () {
+      var btn  = document.getElementById('hamburger-btn');
+      var menu = document.getElementById('mobile-menu');
+      var icon = btn.querySelector('[data-lucide]');
+
+      function open() {
+        menu.classList.remove('hidden');
+        btn.setAttribute('aria-expanded', 'true');
+        btn.setAttribute('aria-label', 'Tutup menu navigasi');
+        icon.setAttribute('data-lucide', 'x');
+        lucide.createIcons();
+      }
+
+      function close() {
+        menu.classList.add('hidden');
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-label', 'Buka menu navigasi');
+        icon.setAttribute('data-lucide', 'menu');
+        lucide.createIcons();
+      }
+
+      btn.addEventListener('click', function () {
+        btn.getAttribute('aria-expanded') === 'true' ? close() : open();
+      });
+
+      menu.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', close);
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && btn.getAttribute('aria-expanded') === 'true') close();
+      });
+    }());
+
+    // ── Navbar shadow on scroll ──
+    (function () {
+      var header = document.getElementById('site-header');
+      function update() {
+        header.classList.toggle('shadow-md', window.scrollY > 8);
+      }
+      window.addEventListener('scroll', update, { passive: true });
+      update();
+    }());
+
+    // ── Thumbnail gallery switcher ──
+    (function () {
+      var mainImg  = document.getElementById('main-image');
+      var thumbRow = document.getElementById('thumbnail-row');
+      var thumbBtns = thumbRow.querySelectorAll('button');
+
+      // Each button holds the img element — get src from its child img
+      thumbBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          // Update main image src to match clicked thumbnail
+          var thumbImg = btn.querySelector('img');
+          mainImg.src = thumbImg.src;
+          mainImg.alt = thumbImg.alt.replace('Thumbnail', 'Tampilan utama');
+
+          // Reset all thumbnails to inactive state
+          thumbBtns.forEach(function (b) {
+            b.classList.remove('border-gold', 'opacity-100');
+            b.classList.add('border-transparent', 'opacity-80');
+          });
+
+          // Set clicked thumbnail as active
+          btn.classList.remove('border-transparent', 'opacity-80');
+          btn.classList.add('border-gold', 'opacity-100');
+        });
+      });
+    }());
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,766 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Room Types – StayEase Property Management</title>
+  <meta name="description" content="Kelola kategori, harga, dan fasilitas dasar untuk setiap tipe akomodasi kamar hotel." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:       '#0B2E4F',
+            'navy-mid': '#1a3a5c',
+            gold:       '#D8A23A',
+            'gold-dark':'#B8882A',
+            page:       '#FAFAFA',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color: #FAFAFA; font-family: 'Inter', sans-serif; color: #1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-xl transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-bold text-white
+               bg-gold rounded-xl shadow-sm transition-all duration-150;
+      }
+    }
+  </style>
+
+  <style>
+    /* Card hover animation */
+    .room-type-card {
+      transition: transform 250ms ease, box-shadow 250ms ease;
+    }
+    .room-type-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(11, 46, 79, 0.14);
+    }
+    .room-type-card:hover .card-img {
+      transform: scale(1.03);
+    }
+    .card-img {
+      transition: transform 300ms ease;
+    }
+
+    /* Empty card hover */
+    .empty-card:hover {
+      border-color: #D8A23A;
+      background-color: #fffcf5;
+    }
+    .empty-card:hover .empty-icon-ring {
+      background-color: #D8A23A;
+      color: white;
+    }
+
+    /* Fade in animation on load */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeInUp 0.45s ease both; }
+    .fade-in-1 { animation-delay: 0.05s; }
+    .fade-in-2 { animation-delay: 0.15s; }
+    .fade-in-3 { animation-delay: 0.25s; }
+    .fade-in-4 { animation-delay: 0.35s; }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex bg-page">
+  <!-- Mobile Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+  <!-- ══════════ TOAST ══════════ -->
+  <div id="toast"
+       class="fixed top-6 right-6 z-[100] flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl
+              transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none">
+    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
+    <span id="toast-msg" class="text-[14px] font-semibold">Action completed.</span>
+  </div>
+
+  <!-- ══════════ DELETE MODAL ══════════ -->
+  <div id="delete-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[440px] overflow-hidden">
+      <div class="p-6">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="trash-2" class="w-5 h-5 text-red-600"></i>
+          </div>
+          <div>
+            <h3 class="font-serif text-[20px] font-bold text-navy mb-1">Delete Room Type</h3>
+            <p class="text-[13px] text-gray-500 leading-relaxed">Are you sure you want to delete <strong id="del-type-name" class="text-navy">"Standard Room"</strong>?</p>
+          </div>
+        </div>
+        <!-- Warning if assigned -->
+        <div id="del-warning" class="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 hidden">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+          <p class="text-[12px] text-amber-800 font-medium leading-relaxed">Room type cannot be deleted if it is still assigned to one or more rooms. Please reassign those rooms before deleting.</p>
+        </div>
+        <div class="flex gap-3 justify-end">
+          <button id="btn-cancel-del" class="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-semibold rounded-xl hover:bg-gray-50">Cancel</button>
+          <button id="btn-confirm-del" class="flex items-center gap-1.5 px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-[13px] font-bold rounded-xl shadow-sm">
+            <i data-lucide="trash" class="w-4 h-4"></i> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[220px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 pt-6 pb-5 border-b border-white/10">
+      <a href="admin-dashboard.html" class="block">
+        <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+        <span class="text-[10px] font-medium text-white/50 tracking-wider uppercase mt-1 block">Management Portal</span>
+      </a>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto no-scrollbar">
+      <a href="admin-dashboard.html" class="sb-link">
+        <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="admin-rooms.html" class="sb-link">
+        <i data-lucide="bed" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Rooms</span>
+      </a>
+      <a href="admin-room-types.html" class="sb-link-active" aria-current="page">
+        <i data-lucide="layers" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Room Types</span>
+      </a>
+      <a href="admin-facilities.html" class="sb-link">
+        <i data-lucide="sparkles" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Facilities</span>
+      </a>
+      <a href="admin-receptionists.html" class="sb-link">
+        <i data-lucide="user-cog" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Manage Receptionist</span>
+      </a>
+      <a href="admin-all-bookings.html" class="sb-link">
+        <i data-lucide="calendar" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>All Bookings</span>
+      </a>
+      <a href="admin-reports.html" class="sb-link">
+        <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span>Reports</span>
+      </a>
+    </nav>
+
+    <!-- Bottom -->
+    <div class="px-4 py-5 border-t border-white/10 space-y-1">
+      <a href="#" class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="help-circle" class="w-4 h-4"></i><span>Support</span>
+      </a>
+      <a href="login.html" class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-4 h-4"></i><span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[220px] flex flex-col min-h-screen w-full">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm flex-wrap lg:flex-nowrap">
+      
+      <button id="mobile-menu-btn" class="lg:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Menu">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Search -->
+      <div class="relative w-full max-w-sm">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input id="search-input" type="text" placeholder="Cari tipe kamar..."
+               class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 transition-all" />
+      </div>
+
+      <!-- Right -->
+      <div class="flex items-center gap-3 ml-auto">
+        <button onclick="showToast('Notifikasi Terbaru');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+        </button>
+        <button onclick="showToast('Pengaturan Sistem');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+        <div class="h-6 w-px bg-gray-200"></div>
+        <div class="flex items-center gap-3">
+          <div class="text-right hidden sm:block">
+            <div class="text-[13px] font-bold text-navy leading-tight">Merica Wibisono</div>
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">ADMINISTRATOR</span>
+          </div>
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+               class="w-9 h-9 rounded-full object-cover border-2 border-gold/40 shadow-sm" alt="Admin" />
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="flex-1 px-4 sm:px-8 py-8 w-full overflow-x-hidden">
+
+      <!-- Page Title Row -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 class="font-serif text-[36px] font-bold text-navy leading-tight mb-1">Manajemen Tipe Kamar</h1>
+          <p class="text-[15px] text-gray-500">Kelola kategori, harga, dan fasilitas dasar untuk setiap tipe akomodasi.</p>
+        </div>
+        <button id="btn-open-add-modal" onclick="openAddModal()"
+                class="flex items-center gap-2 px-6 py-3 bg-gold hover:bg-gold-dark text-navy font-bold text-[14px] rounded-xl shadow-md transition-colors flex-shrink-0">
+          <i data-lucide="plus-circle" class="w-5 h-5 text-navy"></i>
+          <span>Tambah Tipe Kamar</span>
+        </button>
+      </div>
+
+      <!-- Card Grid -->
+      <div id="card-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- ── CARD 1: Standard Room ── -->
+        <div class="room-type-card bg-white rounded-[18px] overflow-hidden border border-[#ECECEC] shadow-sm fade-in fade-in-1"
+             data-name="standard room kamar standard">
+
+          <!-- Image Section -->
+          <div class="relative h-[220px] overflow-hidden">
+            <img class="card-img w-full h-full object-cover"
+                 src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80"
+                 alt="Standard Room" />
+            <!-- Dark Overlay Gradient -->
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div>
+
+            <!-- Floating Action Buttons -->
+            <div class="absolute top-3 right-3 flex gap-2">
+              <button onclick="showToast('Edit Standard Room'); return false;"
+                      class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white text-gray-600 transition-all"
+                      title="Edit">
+                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openDeleteModal('Standard Room', false)"
+                      class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-red-500 hover:text-white text-gray-600 transition-all"
+                      title="Delete">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <!-- Badge -->
+            <div class="absolute bottom-3 left-3">
+              <span class="bg-navy/90 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">
+                KAMAR POPULER
+              </span>
+            </div>
+          </div>
+
+          <!-- Card Body -->
+          <div class="p-5">
+            <div class="mb-3">
+              <h3 class="font-serif text-[22px] font-bold text-navy leading-tight mb-1 cursor-pointer hover:text-gold transition-colors"
+                  onclick="showToast('Membuka Detail Standard Room')">
+                Standard Room
+              </h3>
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-[18px] font-bold text-gold">Rp 850.000</span>
+                <span class="text-[13px] text-gray-400 font-medium">/ malam</span>
+              </div>
+            </div>
+
+            <p class="text-[13px] text-gray-500 leading-relaxed line-clamp-3 mb-4">
+              Elegant and functional space, perfect for business travelers and short stays. Equipped with modern amenities and comfortable furnishings.
+            </p>
+
+            <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
+              <div class="flex items-center gap-1.5 text-[13px] text-gray-500 font-medium">
+                <i data-lucide="bed" class="w-4 h-4 text-gray-400"></i>
+                <span>24 Kamar</span>
+              </div>
+              <button onclick="showToast('Membuka Detail Standard Room')"
+                      class="text-[13px] font-bold text-gold hover:underline transition-all">
+                View Details
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CARD 2: Deluxe Room ── -->
+        <div class="room-type-card bg-white rounded-[18px] overflow-hidden border border-[#ECECEC] shadow-sm fade-in fade-in-2"
+             data-name="deluxe room kamar deluxe">
+
+          <div class="relative h-[220px] overflow-hidden">
+            <img class="card-img w-full h-full object-cover"
+                 src="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=800&q=80"
+                 alt="Deluxe Room" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div>
+
+            <div class="absolute top-3 right-3 flex gap-2">
+              <button onclick="showToast('Edit Deluxe Room'); return false;"
+                      class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white text-gray-600 transition-all">
+                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openDeleteModal('Deluxe Room', true)"
+                      class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-red-500 hover:text-white text-gray-600 transition-all">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <div class="absolute bottom-3 left-3">
+              <span class="bg-gold/90 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">
+                RECOMMENDED
+              </span>
+            </div>
+          </div>
+
+          <div class="p-5">
+            <div class="mb-3">
+              <h3 class="font-serif text-[22px] font-bold text-navy leading-tight mb-1 cursor-pointer hover:text-gold transition-colors"
+                  onclick="showToast('Membuka Detail Deluxe Room')">
+                Deluxe Room
+              </h3>
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-[18px] font-bold text-gold">Rp 1.250.000</span>
+                <span class="text-[13px] text-gray-400 font-medium">/ malam</span>
+              </div>
+            </div>
+
+            <p class="text-[13px] text-gray-500 leading-relaxed line-clamp-3 mb-4">
+              Spacious room with king-size bed, private balcony, and stunning city views. Designed for guests who enjoy a superior level of comfort.
+            </p>
+
+            <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
+              <div class="flex items-center gap-1.5 text-[13px] text-gray-500 font-medium">
+                <i data-lucide="building-2" class="w-4 h-4 text-gray-400"></i>
+                <span>12 Kamar</span>
+              </div>
+              <button onclick="showToast('Membuka Detail Deluxe Room')"
+                      class="text-[13px] font-bold text-gold hover:underline transition-all">
+                View Details
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CARD 3: Presidential Suite ── -->
+        <div class="room-type-card bg-white rounded-[18px] overflow-hidden border border-[#ECECEC] shadow-sm fade-in fade-in-3"
+             data-name="presidential suite penthouse premium">
+
+          <div class="relative h-[220px] overflow-hidden">
+            <img class="card-img w-full h-full object-cover"
+                 src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80"
+                 alt="Presidential Suite" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div>
+
+            <div class="absolute top-3 right-3 flex gap-2">
+              <button onclick="showToast('Edit Presidential Suite'); return false;"
+                      class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white text-gray-600 transition-all">
+                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openDeleteModal('Presidential Suite', false)"
+                      class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-red-500 hover:text-white text-gray-600 transition-all">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <div class="absolute bottom-3 left-3">
+              <span class="bg-navy/90 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">
+                PREMIUM
+              </span>
+            </div>
+          </div>
+
+          <div class="p-5">
+            <div class="mb-3">
+              <h3 class="font-serif text-[22px] font-bold text-navy leading-tight mb-1 cursor-pointer hover:text-gold transition-colors"
+                  onclick="showToast('Membuka Detail Presidential Suite')">
+                Presidential Suite
+              </h3>
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-[18px] font-bold text-gold">Rp 4.500.000</span>
+                <span class="text-[13px] text-gray-400 font-medium">/ malam</span>
+              </div>
+            </div>
+
+            <p class="text-[13px] text-gray-500 leading-relaxed line-clamp-3 mb-4">
+              The ultimate luxury experience. Two bedrooms, private dining, and panoramic ocean views for the most discerning guests.
+            </p>
+
+            <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
+              <div class="flex items-center gap-1.5 text-[13px] text-gray-500 font-medium">
+                <i data-lucide="star" class="w-4 h-4 text-gray-400"></i>
+                <span>4 Kamar</span>
+              </div>
+              <button onclick="showToast('Membuka Detail Presidential Suite')"
+                      class="text-[13px] font-bold text-gold hover:underline transition-all">
+                View Details
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CARD 4: Family Room ── -->
+        <div class="room-type-card bg-white rounded-[18px] overflow-hidden border border-[#ECECEC] shadow-sm fade-in fade-in-4"
+             data-name="family room kamar keluarga">
+
+          <div class="relative h-[220px] overflow-hidden">
+            <img class="card-img w-full h-full object-cover"
+                 src="https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=800&q=80"
+                 alt="Family Room" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div>
+
+            <div class="absolute top-3 right-3 flex gap-2">
+              <button onclick="showToast('Edit Family Room'); return false;"
+                      class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white text-gray-600 transition-all">
+                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openDeleteModal('Family Room', true)"
+                      class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-red-500 hover:text-white text-gray-600 transition-all">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <div class="absolute bottom-3 left-3">
+              <span class="bg-emerald-700/90 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">
+                FAMILY
+              </span>
+            </div>
+          </div>
+
+          <div class="p-5">
+            <div class="mb-3">
+              <h3 class="font-serif text-[22px] font-bold text-navy leading-tight mb-1 cursor-pointer hover:text-gold transition-colors"
+                  onclick="showToast('Membuka Detail Family Room')">
+                Family Room
+              </h3>
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-[18px] font-bold text-gold">Rp 1.500.000</span>
+                <span class="text-[13px] text-gray-400 font-medium">/ malam</span>
+              </div>
+            </div>
+
+            <p class="text-[13px] text-gray-500 leading-relaxed line-clamp-3 mb-4">
+              Ideal for families, featuring twin beds and an extra pull-out sofa. Spacious layout with child-friendly amenities and a warm, cozy atmosphere.
+            </p>
+
+            <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
+              <div class="flex items-center gap-1.5 text-[13px] text-gray-500 font-medium">
+                <i data-lucide="users" class="w-4 h-4 text-gray-400"></i>
+                <span>18 Kamar</span>
+              </div>
+              <button onclick="showToast('Membuka Detail Family Room')"
+                      class="text-[13px] font-bold text-gold hover:underline transition-all">
+                View Details
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CARD 5: Executive Suite ── -->
+        <div class="room-type-card bg-white rounded-[18px] overflow-hidden border border-[#ECECEC] shadow-sm fade-in fade-in-4"
+             data-name="executive suite kamar eksekutif">
+
+          <div class="relative h-[220px] overflow-hidden">
+            <img class="card-img w-full h-full object-cover"
+                 src="https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=800&q=80"
+                 alt="Executive Suite" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div>
+
+            <div class="absolute top-3 right-3 flex gap-2">
+              <button onclick="showToast('Edit Executive Suite'); return false;"
+                      class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white text-gray-600 transition-all">
+                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openDeleteModal('Executive Suite', false)"
+                      class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-red-500 hover:text-white text-gray-600 transition-all">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <div class="absolute bottom-3 left-3">
+              <span class="bg-gold/90 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">
+                EXECUTIVE
+              </span>
+            </div>
+          </div>
+
+          <div class="p-5">
+            <div class="mb-3">
+              <h3 class="font-serif text-[22px] font-bold text-navy leading-tight mb-1 cursor-pointer hover:text-gold transition-colors"
+                  onclick="showToast('Membuka Detail Executive Suite')">
+                Executive Suite
+              </h3>
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-[18px] font-bold text-gold">Rp 2.800.000</span>
+                <span class="text-[13px] text-gray-400 font-medium">/ malam</span>
+              </div>
+            </div>
+
+            <p class="text-[13px] text-gray-500 leading-relaxed line-clamp-3 mb-4">
+              Exclusive suite with a separate living area, premium king bed, Nespresso machine, and dedicated butler service upon request.
+            </p>
+
+            <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
+              <div class="flex items-center gap-1.5 text-[13px] text-gray-500 font-medium">
+                <i data-lucide="crown" class="w-4 h-4 text-gray-400"></i>
+                <span>8 Kamar</span>
+              </div>
+              <button onclick="showToast('Membuka Detail Executive Suite')"
+                      class="text-[13px] font-bold text-gold hover:underline transition-all">
+                View Details
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── EMPTY CARD (Add New) ── -->
+        <div id="empty-card"
+             onclick="window.location.href='admin-add-room-type.html'"
+             class="empty-card border-2 border-dashed border-gray-300 rounded-[18px] min-h-[200px]
+                    flex flex-col items-center justify-center cursor-pointer transition-all duration-250 p-8 fade-in fade-in-4">
+          <div class="empty-icon-ring w-14 h-14 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mb-4 transition-all duration-200">
+            <i data-lucide="plus" class="w-7 h-7"></i>
+          </div>
+          <p class="font-serif text-[18px] font-bold text-gray-600 mb-1 text-center">Tambah Tipe Baru</p>
+          <p class="text-[13px] text-gray-400 text-center">Definisikan kategori kamar lainnya</p>
+        </div>
+
+      </div><!-- /#card-grid -->
+
+      <!-- No results state -->
+      <div id="no-results" class="hidden text-center py-20">
+        <i data-lucide="search-x" class="w-12 h-12 text-gray-300 mx-auto mb-3"></i>
+        <p class="font-serif text-[22px] font-bold text-gray-400 mb-1">Tidak Ada Hasil</p>
+        <p class="text-[14px] text-gray-400">Tipe kamar tidak ditemukan untuk kata kunci tersebut.</p>
+      </div>
+
+  <!-- ══════════ MODAL TAMBAH TIPE KAMAR ══════════ -->
+  <div id="add-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs hidden">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-[540px] overflow-hidden transform transition-all">
+      
+      <!-- Modal Header (Dark Navy) -->
+      <div class="bg-navy px-6 py-4 flex items-center justify-between">
+        <h3 class="font-serif text-[20px] font-bold text-gold">Tambah Tipe Kamar</h3>
+        <button onclick="closeAddModal()" type="button" class="text-white/70 hover:text-white transition-colors p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <form id="form-add-room-type" onsubmit="submitAddModal(event)" class="p-6 space-y-4">
+        
+        <!-- Nama Tipe Kamar -->
+        <div>
+          <label for="modal-room-name" class="block text-[13px] font-semibold text-gray-700 mb-1.5">
+            Nama Tipe Kamar <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="modal-room-name" required placeholder="Contoh: Deluxe Room"
+                 class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-[14px] text-gray-800 placeholder-gray-400 focus:outline-none focus:border-navy focus:ring-1 focus:ring-navy transition-all" />
+        </div>
+
+        <!-- Row: Harga per Malam & Badge Label -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Harga per Malam -->
+          <div>
+            <label for="modal-room-price" class="block text-[13px] font-semibold text-gray-700 mb-1.5">
+              Harga per Malam <span class="text-red-500">*</span>
+            </label>
+            <div class="flex rounded-xl border border-gray-300 overflow-hidden focus-within:border-navy focus-within:ring-1 focus-within:ring-navy transition-all">
+              <span class="bg-gray-50 border-r border-gray-300 px-3 py-2.5 text-[13px] font-bold text-gray-600 flex items-center justify-center">
+                Rp
+              </span>
+              <input type="text" id="modal-room-price" required placeholder="1.250.000"
+                     class="w-full px-3 py-2.5 bg-white text-[14px] text-gray-800 focus:outline-none" />
+            </div>
+          </div>
+
+          <!-- Badge Label -->
+          <div>
+            <label for="modal-room-badge" class="block text-[13px] font-semibold text-gray-700 mb-1.5">
+              Badge Label
+            </label>
+            <div class="relative">
+              <select id="modal-room-badge"
+                      class="w-full pl-4 pr-9 py-2.5 bg-white border border-gray-300 rounded-xl text-[13.5px] text-gray-700 focus:outline-none focus:border-navy focus:ring-1 focus:ring-navy appearance-none cursor-pointer">
+                <option value="">Tidak Ada</option>
+                <option value="Terfavorit">Kamar Terfavorit</option>
+                <option value="Penawaran Terbaik">Penawaran Terbaik</option>
+                <option value="Luxury Suite">Luxury Suite</option>
+              </select>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deskripsi -->
+        <div>
+          <label for="modal-room-desc" class="block text-[13px] font-semibold text-gray-700 mb-1.5">
+            Deskripsi <span class="text-red-500">*</span>
+          </label>
+          <textarea id="modal-room-desc" required rows="3" placeholder="Jelaskan keunggulan dan fasilitas tipe kamar ini..."
+                    class="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-[14px] text-gray-800 placeholder-gray-400 focus:outline-none focus:border-navy focus:ring-1 focus:ring-navy transition-all resize-none"></textarea>
+        </div>
+
+        <!-- Upload Foto Kamar -->
+        <div>
+          <label class="block text-[13px] font-semibold text-gray-700 mb-1.5">
+            Upload Foto Kamar
+          </label>
+          <div onclick="document.getElementById('modal-file-input').click();"
+               class="border-2 border-dashed border-gray-300 bg-[#F9FAFB] rounded-2xl p-6 text-center cursor-pointer hover:bg-gray-50 hover:border-gold transition-colors group">
+            <input type="file" id="modal-file-input" class="hidden" accept="image/*" />
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-gold flex items-center justify-center mx-auto mb-3 group-hover:scale-105 transition-transform">
+              <i data-lucide="image" class="w-5 h-5"></i>
+            </div>
+            <div class="text-[13.5px] font-bold text-navy">
+              Drag and drop foto di sini atau klik untuk unggah
+            </div>
+            <div class="text-[11.5px] text-gray-400 font-medium mt-1">
+              Supports JPG, PNG, WEBP up to 5MB
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-3">
+          <button onclick="closeAddModal()" type="button"
+                  class="px-5 py-2.5 bg-white border border-navy text-navy font-bold text-[13.5px] rounded-xl hover:bg-gray-50 transition-colors">
+            Batal
+          </button>
+          <button type="submit"
+                  class="flex items-center gap-2 px-5 py-2.5 bg-gold hover:bg-gold-dark text-navy font-bold text-[13.5px] rounded-xl shadow-sm transition-colors">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            <span>Simpan Tipe Kamar</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════════ JAVASCRIPT ══════════ -->
+  <script>
+    lucide.createIcons();
+
+    // Toast
+    function showToast(msg) {
+      document.getElementById('toast-msg').textContent = msg;
+      const t = document.getElementById('toast');
+      t.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'), 3000);
+    }
+
+    // Add Room Type Modal
+    const addModal = document.getElementById('add-modal');
+    function openAddModal() {
+      addModal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeAddModal() {
+      addModal.classList.add('hidden');
+    }
+    addModal.addEventListener('click', e => { if (e.target === addModal) closeAddModal(); });
+
+    function submitAddModal(e) {
+      e.preventDefault();
+      const name = document.getElementById('modal-room-name').value || 'Tipe Kamar Baru';
+      closeAddModal();
+      showToast(`✅ Tipe Kamar "${name}" berhasil ditambahkan.`);
+    }
+
+    // Delete Modal
+    const delModal = document.getElementById('delete-modal');
+    let delTarget = '';
+
+    function openDeleteModal(name, isAssigned) {
+      delTarget = name;
+      document.getElementById('del-type-name').textContent = `"${name}"`;
+      const warning = document.getElementById('del-warning');
+      if (isAssigned) {
+        warning.classList.remove('hidden');
+        document.getElementById('btn-confirm-del').disabled = true;
+        document.getElementById('btn-confirm-del').classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        warning.classList.add('hidden');
+        document.getElementById('btn-confirm-del').disabled = false;
+        document.getElementById('btn-confirm-del').classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+      delModal.classList.remove('hidden');
+    }
+
+    document.getElementById('btn-cancel-del').addEventListener('click', () => delModal.classList.add('hidden'));
+    delModal.addEventListener('click', e => { if (e.target === delModal) delModal.classList.add('hidden'); });
+
+    document.getElementById('btn-confirm-del').addEventListener('click', () => {
+      if (document.getElementById('btn-confirm-del').disabled) return;
+      delModal.classList.add('hidden');
+      showToast(`✅ Room Type "${delTarget}" berhasil dihapus.`);
+    });
+
+    // Realtime Search
+    const searchInput = document.getElementById('search-input');
+    const cards = document.querySelectorAll('.room-type-card');
+    const noResults = document.getElementById('no-results');
+    const emptyCard = document.getElementById('empty-card');
+
+    searchInput.addEventListener('input', function () {
+      const q = this.value.toLowerCase().trim();
+      let visible = 0;
+
+      cards.forEach(card => {
+        const name = card.getAttribute('data-name') || '';
+        if (!q || name.includes(q)) {
+          card.style.display = '';
+          visible++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      // Hide empty card and show no results if searching
+      if (q) {
+        emptyCard.style.display = 'none';
+        noResults.classList.toggle('hidden', visible > 0);
+      } else {
+        emptyCard.style.display = '';
+        noResults.classList.add('hidden');
+      }
+    });
+
+    // Mobile Sidebar Toggle
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+
+</body>
+</html>

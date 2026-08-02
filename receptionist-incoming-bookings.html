@@ -1,0 +1,521 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Incoming Bookings – StayEase Property Management</title>
+  <meta name="description" content="Daftar booking masuk yang menunggu konfirmasi receptionist StayEase." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:       '#0F2A44',
+            'navy-mid': '#1a3a5c',
+            gold:       '#C89A43',
+            'gold-light':'#F5E8C5',
+            page:       '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter','sans-serif'],
+            serif: ['"Playfair Display"','Georgia','serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color: #F8F7F4; font-family:'Inter',sans-serif; color:#1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display:none; }
+      .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-5 py-3 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-lg transition-all duration-150 cursor-pointer;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-5 py-3 text-[14px] font-semibold text-white
+               bg-white/10 rounded-lg relative border-l-4 border-gold;
+      }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex bg-page">
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+  <!-- ── REJECT MODAL ── -->
+  <div id="reject-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[420px] p-8">
+      <div class="flex items-start gap-4 mb-6">
+        <div class="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i>
+        </div>
+        <div>
+          <h3 class="font-serif text-[18px] font-bold text-navy mb-1">Tolak Reservasi</h3>
+          <p class="text-[14px] text-gray-500 leading-relaxed">Apakah Anda yakin ingin menolak reservasi ini? Tindakan ini tidak dapat dibatalkan.</p>
+        </div>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button id="reject-cancel" class="px-5 py-2.5 text-[14px] font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
+        <button id="reject-confirm" class="px-5 py-2.5 text-[14px] font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors">Ya, Tolak</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[215px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+
+    <!-- Logo -->
+    <div class="px-6 pt-6 pb-5 border-b border-white/10">
+      <a href="receptionist-dashboard.html" class="block">
+        <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+      </a>
+    </div>
+
+    <!-- Profile -->
+    <div class="px-5 py-4 border-b border-white/10 flex items-center gap-3">
+      <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
+           alt="Cengkeh Nirmala"
+           class="w-10 h-10 rounded-full object-cover border-2 border-gold/30 flex-shrink-0" />
+      <div class="min-w-0">
+        <div class="text-[13px] font-semibold text-white leading-tight truncate">Cengkeh Nirmala</div>
+        <span class="text-[10px] font-bold text-navy bg-gold px-2 py-0.5 rounded-full mt-1 inline-block tracking-wide">Receptionist</span>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto no-scrollbar">
+      <a href="receptionist-dashboard.html" class="sb-link">
+        <i data-lucide="layout-dashboard" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="receptionist-incoming-bookings.html" class="sb-link-active" aria-current="page">
+        <i data-lucide="calendar-clock" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Incoming Bookings</span>
+      </a>
+      <a href="receptionist-reservations.html" class="sb-link">
+        <i data-lucide="clipboard-list" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Reservations</span>
+      </a>
+      <a href="receptionist-checkin.html" class="sb-link">
+        <i data-lucide="key" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Check-in / Check-out</span>
+      </a>
+      <a href="receptionist-guests.html" class="sb-link">
+        <i data-lucide="users" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Guest</span>
+      </a>
+      <a href="receptionist-customers.html" class="sb-link">
+        <i data-lucide="user-check" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Customer Data</span>
+      </a>
+    </nav>
+
+    <!-- Bottom Menu with New Booking -->
+    <div class="px-4 py-5 border-t border-white/10 space-y-3">
+      <a href="receptionist-new-booking.html"
+         class="flex items-center justify-center gap-2 w-full bg-gold hover:bg-[#b8883e] text-navy font-bold text-[13px] py-2.5 rounded-xl transition-colors shadow-md">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        <span>New Booking</span>
+      </a>
+      <a href="login.html"
+         class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Log Out</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[215px] flex flex-col min-h-screen">
+
+    <!-- ============================================================
+         STICKY TOPBAR (MOBILE HAMBURGER)
+    ============================================================ -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 lg:hidden shadow-sm">
+      <button id="mobile-menu-btn" class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Sidebar Menu">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+      <span class="font-serif text-[18px] font-bold text-navy">StayEase</span>
+    </header>
+
+
+    <!-- Header Bar -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm">
+      <div class="relative w-full max-w-md">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input id="header-search" type="text" placeholder="Search..."
+               class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 focus:ring-2 focus:ring-navy/10 transition-all" />
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors relative" aria-label="Notifikasi">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+        </button>
+        <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors" aria-label="Settings">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+        <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors" aria-label="Bantuan">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Section -->
+    <main class="flex-1 px-8 py-7 max-w-[1240px]">
+
+      <!-- Title & Action Buttons -->
+      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 class="font-serif text-[34px] font-bold text-navy leading-tight mb-1">Booking Masuk - Pending</h1>
+          <p class="text-[15px] text-gray-500">Kelola permintaan reservasi yang baru masuk.</p>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0 pt-1">
+          <button class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-[13px] font-semibold text-gray-600 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Filter
+          </button>
+          <button class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-[13px] font-semibold text-gray-600 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
+            <i data-lucide="download" class="w-4 h-4"></i> Export List
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Card Container -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+
+        <!-- Internal Search Bar -->
+        <div class="p-4 border-b border-gray-100 bg-white">
+          <div class="relative w-full max-w-sm">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </div>
+            <input id="table-search" type="text" placeholder="Cari nama customer atau nomor kamar..."
+                   class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 transition-all" />
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left min-w-[900px]">
+            <thead>
+              <tr class="border-b border-gray-100 bg-[#F8F9FA]">
+                <th class="py-3.5 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">NAMA CUSTOMER</th>
+                <th class="py-3.5 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">KONTAK</th>
+                <th class="py-3.5 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">NOMOR KAMAR</th>
+                <th class="py-3.5 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">TIPE KAMAR</th>
+                <th class="py-3.5 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">CHECK-IN / OUT</th>
+                <th class="py-3.5 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">TOTAL HARGA</th>
+                <th class="py-3.5 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">AKSI</th>
+              </tr>
+            </thead>
+            <tbody id="booking-table" class="divide-y divide-gray-50 text-[14px]">
+
+              <!-- Row 1 -->
+              <tr class="hover:bg-gray-50/60 transition-colors booking-row" data-search="ketumbar anindya ketumbar@email.com deluxe 304 304">
+                <td class="py-4.5 px-6">
+                  <div class="font-bold text-navy leading-snug">Ketumbar Anindya</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">Booking ID: #SE-2026-901</div>
+                </td>
+                <td class="py-4.5 px-5">
+                  <div class="text-[13px] text-gray-700">Ketumbar@email.com</div>
+                  <div class="text-[12px] text-gray-400">+62 812 4455 6677</div>
+                </td>
+                <td class="py-4.5 px-5 text-center">
+                  <span class="inline-block bg-[#EAECEF] text-navy font-bold text-[13px] px-4 py-2 rounded-xl border border-gray-200/50">
+                    Deluxe - 304
+                  </span>
+                </td>
+                <td class="py-4.5 px-5">
+                  <div class="text-[13px] text-gray-700 leading-snug">Deluxe Room</div>
+                </td>
+                <td class="py-4.5 px-5">
+                  <div class="text-[13px] text-gray-700">24 Juli 2026</div>
+                  <div class="text-[12px] text-gray-400">26 Juli 2026</div>
+                </td>
+                <td class="py-4.5 px-5 font-bold text-navy text-[14px]">
+                  Rp 4.250.000
+                </td>
+                <td class="py-4.5 px-6 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <a href="booking-confirmation.html"
+                       class="bg-[#1b6237] hover:bg-emerald-800 text-white text-[13px] font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">
+                      Konfirmasi
+                    </a>
+                    <button type="button"
+                            class="btn-tolak border border-red-500 text-red-500 hover:bg-red-50 text-[13px] font-bold px-4 py-2 rounded-xl transition-colors">
+                      Tolak
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 2 -->
+              <tr class="hover:bg-gray-50/60 transition-colors booking-row" data-search="kapulaga wirawan kapulaga@webmail.id suite 501 501">
+                <td class="py-4.5 px-6">
+                  <div class="font-bold text-navy leading-snug">Kapulaga Wirawan</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">Booking ID: #SE-2026-902</div>
+                </td>
+                <td class="py-4.5 px-5">
+                  <div class="text-[13px] text-gray-700">Kapulaga@webmail.id</div>
+                  <div class="text-[12px] text-gray-400">+62 811 2233 4455</div>
+                </td>
+                <td class="py-4.5 px-5 text-center">
+                  <span class="inline-block bg-[#EAECEF] text-navy font-bold text-[13px] px-4 py-2 rounded-xl border border-gray-200/50">
+                    Suite - 501
+                  </span>
+                </td>
+                <td class="py-4.5 px-5">
+                  <div class="text-[13px] text-gray-700 leading-snug">Presidential Suite</div>
+                </td>
+                <td class="py-4.5 px-5">
+                  <div class="text-[13px] text-gray-700">28 Juli 2026</div>
+                  <div class="text-[12px] text-gray-400">25 Juli 2026</div>
+                </td>
+                <td class="py-4.5 px-5 font-bold text-navy text-[14px]">
+                  Rp 12.750.000
+                </td>
+                <td class="py-4.5 px-6 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <a href="booking-confirmation.html"
+                       class="bg-[#1b6237] hover:bg-emerald-800 text-white text-[13px] font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">
+                      Konfirmasi
+                    </a>
+                    <button type="button"
+                            class="btn-tolak border border-red-500 text-red-500 hover:bg-red-50 text-[13px] font-bold px-4 py-2 rounded-xl transition-colors">
+                      Tolak
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 3 -->
+              <tr class="hover:bg-gray-50/60 transition-colors booking-row" data-search="erlangga pala erlangga@provider.com standard 210 210">
+                <td class="py-4.5 px-6">
+                  <div class="font-bold text-navy leading-snug">Erlangga Pala</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">Booking ID: #SE-2026-903</div>
+                </td>
+                <td class="py-4.5 px-5">
+                  <div class="text-[13px] text-gray-700">Erlangga@provider.com</div>
+                  <div class="text-[12px] text-gray-400">+62 819 8877 6655</div>
+                </td>
+                <td class="py-4.5 px-5 text-center">
+                  <span class="inline-block bg-[#EAECEF] text-navy font-bold text-[13px] px-4 py-2 rounded-xl border border-gray-200/50">
+                    Standard - 210
+                  </span>
+                </td>
+                <td class="py-4.5 px-5">
+                  <div class="text-[13px] text-gray-700 leading-snug">Standard Twin</div>
+                </td>
+                <td class="py-4.5 px-5">
+                  <div class="text-[13px] text-gray-700">26 Juli 2026</div>
+                  <div class="text-[12px] text-gray-400">27 Juli 2026</div>
+                </td>
+                <td class="py-4.5 px-5 font-bold text-navy text-[14px]">
+                  Rp 1.100.000
+                </td>
+                <td class="py-4.5 px-6 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <a href="booking-confirmation.html"
+                       class="bg-[#1b6237] hover:bg-emerald-800 text-white text-[13px] font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">
+                      Konfirmasi
+                    </a>
+                    <button type="button"
+                            class="btn-tolak border border-red-500 text-red-500 hover:bg-red-50 text-[13px] font-bold px-4 py-2 rounded-xl transition-colors">
+                      Tolak
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 4 -->
+              <tr class="hover:bg-gray-50/60 transition-colors booking-row" data-search="kemangi ardana kemangi@mail.com deluxe 412 412">
+                <td class="py-4.5 px-6">
+                  <div class="font-bold text-navy leading-snug">Kemangi Ardana</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">Booking ID: #SE-2026-904</div>
+                </td>
+                <td class="py-4.5 px-5">
+                  <div class="text-[13px] text-gray-700">Kemangi@mail.com</div>
+                  <div class="text-[12px] text-gray-400">+62 855 4433 2211</div>
+                </td>
+                <td class="py-4.5 px-5 text-center">
+                  <span class="inline-block bg-[#EAECEF] text-navy font-bold text-[13px] px-4 py-2 rounded-xl border border-gray-200/50">
+                    Deluxe - 412
+                  </span>
+                </td>
+                <td class="py-4.5 px-5">
+                  <div class="text-[13px] text-gray-700 leading-snug">Deluxe Room</div>
+                </td>
+                <td class="py-4.5 px-5">
+                  <div class="text-[13px] text-gray-700">27 Juli 2026</div>
+                  <div class="text-[12px] text-gray-400">30 Juli 2026</div>
+                </td>
+                <td class="py-4.5 px-5 font-bold text-navy text-[14px]">
+                  Rp 6.375.000
+                </td>
+                <td class="py-4.5 px-6 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <a href="booking-confirmation.html"
+                       class="bg-[#1b6237] hover:bg-emerald-800 text-white text-[13px] font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">
+                      Konfirmasi
+                    </a>
+                    <button type="button"
+                            class="btn-tolak border border-red-500 text-red-500 hover:bg-red-50 text-[13px] font-bold px-4 py-2 rounded-xl transition-colors">
+                      Tolak
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer / Pagination -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-100 bg-gray-50/30">
+          <p id="showing-count" class="text-[13px] text-gray-500">Showing 4 of 12 pending requests</p>
+          <div class="flex items-center gap-1.5">
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-100 transition-colors">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-navy text-white text-[13px] font-bold">1</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-[13px] font-medium transition-colors">2</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-[13px] font-medium transition-colors">3</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-100 transition-colors">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Confirmed Today -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 border-l-4 border-l-emerald-600 p-5 flex items-center gap-4">
+          <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="check" class="w-5 h-5 text-emerald-700"></i>
+          </div>
+          <div>
+            <div class="font-serif text-[30px] font-bold text-navy leading-none">8</div>
+            <div class="text-[12px] font-semibold text-gray-500 mt-1">Confirmed Today</div>
+          </div>
+        </div>
+
+        <!-- Pending Review -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 border-l-4 border-l-amber-500 p-5 flex items-center gap-4">
+          <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="more-horizontal" class="w-5 h-5 text-amber-700"></i>
+          </div>
+          <div>
+            <div class="font-serif text-[30px] font-bold text-navy leading-none">12</div>
+            <div class="text-[12px] font-semibold text-gray-500 mt-1">Pending Review</div>
+          </div>
+        </div>
+
+        <!-- Rejected/Expired -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 border-l-4 border-l-red-500 p-5 flex items-center gap-4">
+          <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="x" class="w-5 h-5 text-red-600"></i>
+          </div>
+          <div>
+            <div class="font-serif text-[30px] font-bold text-navy leading-none">3</div>
+            <div class="text-[12px] font-semibold text-gray-500 mt-1">Rejected/Expired</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    lucide.createIcons();
+
+    // Reject Modal logic
+    const modal = document.getElementById('reject-modal');
+    let pendingRow = null;
+
+    document.querySelectorAll('.btn-tolak').forEach(btn => {
+      btn.addEventListener('click', function () {
+        pendingRow = this.closest('tr');
+        modal.classList.remove('hidden');
+      });
+    });
+
+    document.getElementById('reject-cancel').addEventListener('click', () => {
+      modal.classList.add('hidden');
+      pendingRow = null;
+    });
+
+    document.getElementById('reject-confirm').addEventListener('click', () => {
+      if (pendingRow) {
+        pendingRow.style.transition = 'opacity 0.3s';
+        pendingRow.style.opacity = '0';
+        setTimeout(() => { pendingRow.remove(); }, 300);
+      }
+      modal.classList.add('hidden');
+      pendingRow = null;
+    });
+
+    modal.addEventListener('click', e => {
+      if (e.target === modal) { modal.classList.add('hidden'); pendingRow = null; }
+    });
+
+    // Realtime Search Filtering
+    const tableSearch = document.getElementById('table-search');
+    const headerSearch = document.getElementById('header-search');
+    const rows = document.querySelectorAll('.booking-row');
+
+    function applySearch(query) {
+      const q = query.toLowerCase().trim();
+      let visible = 0;
+      rows.forEach(row => {
+        const text = row.getAttribute('data-search') || '';
+        if (!q || text.includes(q)) {
+          row.style.display = '';
+          visible++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+      document.getElementById('showing-count').textContent = `Showing ${visible} of 12 pending requests`;
+    }
+
+    [tableSearch, headerSearch].forEach(input => {
+      if (input) {
+        input.addEventListener('input', function() {
+          applySearch(this.value);
+        });
+      }
+    });
+  </script>
+
+  <script>
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+</body>
+</html>

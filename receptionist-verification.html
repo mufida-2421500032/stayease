@@ -1,0 +1,760 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Permintaan Konfirmasi Akun Baru – StayEase Property Management</title>
+  <meta name="description" content="Review and approve new guest account registration requests on StayEase Property Management." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:        '#0F2A44',
+            'navy-mid':  '#1a3a5c',
+            gold:        '#C89A43',
+            'gold-light':'#F5E8C5',
+            'green-app': '#2E7D32',
+            'red-app':   '#D32F2F',
+            page:        '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color:#F8F7F4; font-family:'Inter',sans-serif; color:#1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display:none; }
+      .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-lg transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-semibold text-white
+               bg-white/10 rounded-lg border-l-[3px] border-gold;
+      }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex bg-page">
+  <!-- Mobile Sidebar Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+
+  <!-- ══════════════════════ TOAST NOTIFICATION ══════════════════════ -->
+  <div id="toast" class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-[-20px] opacity-0 pointer-events-none">
+    <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+    <span id="toast-msg" class="text-[14px] font-semibold">Guest account approved successfully.</span>
+  </div>
+
+  <!-- ══════════════════════ APPROVE MODAL ══════════════════════ -->
+  <div id="approve-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[440px] p-7">
+      <div class="flex items-start gap-4 mb-5">
+        <div class="w-11 h-11 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 text-emerald-700">
+          <i data-lucide="user-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="font-serif text-[18px] font-bold text-navy mb-1">Approve Guest Registration</h3>
+          <p class="text-[13px] text-gray-500 leading-relaxed">
+            Are you sure you want to approve this guest account? Once approved, the guest will be able to log in and make reservations.
+          </p>
+        </div>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button id="btn-cancel-approve" class="px-4 py-2 text-[13px] font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+          Cancel
+        </button>
+        <button id="btn-confirm-approve" class="px-5 py-2 text-[13px] font-semibold text-white bg-green-app hover:bg-emerald-800 rounded-xl transition-colors shadow-sm">
+          Approve Account
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ REJECT MODAL ══════════════════════ -->
+  <div id="reject-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[460px] p-7">
+      <div class="flex items-start gap-4 mb-4">
+        <div class="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 text-red-600">
+          <i data-lucide="user-x" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="font-serif text-[18px] font-bold text-navy mb-1">Reject Guest Registration</h3>
+          <p class="text-[13px] text-gray-500">Please select a reason for rejecting this registration request.</p>
+        </div>
+      </div>
+      
+      <div class="space-y-3 mb-5">
+        <div>
+          <label class="block text-[12px] font-bold text-gray-700 mb-1">Reason <span class="text-red-500">*</span></label>
+          <select id="reject-reason" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 focus:outline-none">
+            <option value="Invalid identity document">Invalid identity document</option>
+            <option value="Duplicate account">Duplicate account</option>
+            <option value="Incorrect information">Incorrect information</option>
+            <option value="Suspicious registration">Suspicious registration</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div id="other-reason-box" class="hidden">
+          <label class="block text-[12px] font-bold text-gray-700 mb-1">Explanation</label>
+          <textarea id="reject-explanation" rows="2" placeholder="Please explain the reason..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] focus:outline-none"></textarea>
+        </div>
+      </div>
+
+      <div class="flex gap-3 justify-end">
+        <button id="btn-cancel-reject" class="px-4 py-2 text-[13px] font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+          Cancel
+        </button>
+        <button id="btn-confirm-reject" class="px-5 py-2 text-[13px] font-semibold text-white bg-red-app hover:bg-red-700 rounded-xl transition-colors shadow-sm">
+          Reject Registration
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ GUEST DETAIL MODAL ══════════════════════ -->
+  <div id="guest-detail-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[600px] overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-navy px-6 py-4 flex items-center justify-between text-white">
+        <div>
+          <h3 id="dt-modal-title" class="font-serif text-[20px] font-bold text-gold">Guest Applicant Details</h3>
+          <p id="dt-modal-sub" class="text-[12px] text-white/70">Registration ID: #REG-2026-881</p>
+        </div>
+        <button id="close-dt-modal" class="p-1 hover:bg-white/10 rounded-lg transition-colors text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-5 text-[14px]">
+        <!-- Personal Info -->
+        <div>
+          <h4 class="text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-2 border-b pb-1">Personal & Contact Information</h4>
+          <div class="grid grid-cols-2 gap-3 text-[13px]">
+            <div><span class="text-gray-400 block text-[11px]">Full Name</span><span id="dt-name" class="font-bold text-navy">Peppermint Baskara</span></div>
+            <div><span class="text-gray-400 block text-[11px]">Email</span><span id="dt-email" class="font-semibold text-navy">baskara@webmail.id</span></div>
+            <div><span class="text-gray-400 block text-[11px]">Phone Number</span><span id="dt-phone" class="font-semibold text-navy">+62 156 9281 0946</span></div>
+            <div><span class="text-gray-400 block text-[11px]">Nationality</span><span class="font-semibold text-navy">Indonesia</span></div>
+          </div>
+        </div>
+
+        <!-- Verification Badges -->
+        <div>
+          <h4 class="text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-2 border-b pb-1">Verification Status</h4>
+          <div class="flex items-center gap-3">
+            <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-full">
+              <i data-lucide="check-circle" class="w-3 h-3"></i> Email Verified
+            </span>
+            <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-full">
+              <i data-lucide="check-circle" class="w-3 h-3"></i> Phone Verified
+            </span>
+            <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-1 rounded-full">
+              <i data-lucide="clock" class="w-3 h-3"></i> Identity Pending
+            </span>
+          </div>
+        </div>
+
+        <!-- Document Preview -->
+        <div>
+          <h4 class="text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-2 border-b pb-1">Uploaded Identity Documents</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="border border-gray-200 rounded-xl p-3 bg-gray-50 text-center">
+              <span class="text-[11px] text-gray-500 block mb-2 font-medium">KTP / Passport Document</span>
+              <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=300&q=80" alt="Identity Card" class="h-28 w-full object-cover rounded-lg border" />
+            </div>
+            <div class="border border-gray-200 rounded-xl p-3 bg-gray-50 text-center">
+              <span class="text-[11px] text-gray-500 block mb-2 font-medium">Selfie Verification</span>
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80" alt="Selfie Verification" class="h-28 w-full object-cover rounded-lg border" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 px-6 py-4 flex justify-end">
+        <button id="btn-close-dt" class="px-5 py-2 bg-navy text-white text-[13px] font-semibold rounded-xl hover:bg-navy-mid transition-colors">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[215px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+
+    <!-- Logo -->
+    <div class="px-6 pt-6 pb-5 border-b border-white/10">
+      <a href="receptionist-dashboard.html" class="block">
+        <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+      </a>
+    </div>
+
+    <!-- Profile -->
+    <div class="px-5 py-4 border-b border-white/10 flex items-center gap-3">
+      <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
+           alt="Cengkeh Nirmala"
+           class="w-10 h-10 rounded-full object-cover border-2 border-gold/30 flex-shrink-0" />
+      <div class="min-w-0">
+        <div class="text-[13px] font-semibold text-white leading-tight truncate">Cengkeh Nirmala</div>
+        <span class="text-[10px] font-bold text-navy bg-gold px-2 py-0.5 rounded-full mt-1 inline-block tracking-wide">
+          Receptionist
+        </span>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto no-scrollbar">
+      <a href="receptionist-dashboard.html" class="sb-link">
+        <i data-lucide="layout-dashboard" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="receptionist-incoming-bookings.html" class="sb-link">
+        <i data-lucide="calendar-clock" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Incoming Bookings</span>
+      </a>
+      <a href="receptionist-reservations.html" class="sb-link">
+        <i data-lucide="clipboard-list" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Reservations</span>
+      </a>
+      <a href="receptionist-checkin.html" class="sb-link">
+        <i data-lucide="key" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Check-in / Check-out</span>
+      </a>
+      <a href="receptionist-guests.html" class="sb-link-active" aria-current="page">
+        <i data-lucide="users" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Guest</span>
+      </a>
+      <a href="receptionist-customers.html" class="sb-link">
+        <i data-lucide="user-check" class="w-[17px] h-[17px] flex-shrink-0"></i>
+        <span>Customer Data</span>
+      </a>
+    </nav>
+
+    <!-- Bottom -->
+    <div class="px-4 py-5 border-t border-white/10 space-y-3">
+      <a href="receptionist-new-booking.html"
+         class="flex items-center justify-center gap-2 w-full bg-gold hover:bg-[#b8883e] text-navy font-bold text-[13px] py-2.5 rounded-xl transition-colors shadow-md">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        <span>New Booking</span>
+      </a>
+      <a href="login.html"
+         class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Log Out</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+  <div id="main-wrapper" class="flex-1 lg:ml-[215px] flex flex-col min-h-screen min-w-0">
+
+    <!-- ============================================================
+         STICKY TOPBAR (MOBILE HAMBURGER)
+    ============================================================ -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 lg:hidden shadow-sm">
+      <button id="mobile-menu-btn" class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Sidebar Menu">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+      <span class="font-serif text-[18px] font-bold text-navy">StayEase</span>
+    </header>
+
+
+    <!-- Header Bar -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm">
+      <!-- Search Bar -->
+      <div class="relative w-full max-w-md">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input id="header-search"
+               type="text"
+               placeholder="Search guests by name or ID..."
+               class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 focus:ring-2 focus:ring-navy/10 transition-all" />
+      </div>
+
+      <!-- Header Icons -->
+      <div class="flex items-center gap-2">
+        <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors relative" aria-label="Notifications">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+        </button>
+        <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors" aria-label="Help Center">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+        <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors" aria-label="Applications Menu">
+          <i data-lucide="grid" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 px-8 py-7 max-w-[1240px]">
+
+      <!-- Breadcrumb -->
+      <nav class="flex items-center gap-1.5 text-[13px] text-gray-400 mb-3" aria-label="Breadcrumb">
+        <a href="receptionist-guests.html" class="hover:text-navy transition-colors">Guest</a>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-300"></i>
+        <span class="font-semibold text-navy">Register New Guest</span>
+      </nav>
+
+      <!-- Title & Subtitle -->
+      <div class="mb-6">
+        <h1 class="font-serif text-[34px] font-bold text-navy leading-tight mb-1">Permintaan Konfirmasi Akun Baru</h1>
+        <p class="text-[15px] text-gray-500">Review and approve new guest account registration requests before granting access to the StayEase platform.</p>
+      </div>
+
+      <!-- ── 2-COLUMN LAYOUT ── -->
+      <div class="flex gap-6 items-start">
+
+        <!-- ═══ KOLOM KIRI (≈65%): REQUEST LIST ═══ -->
+        <div class="flex-1 min-w-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between min-h-[560px]">
+          
+          <div>
+            <!-- Tabs Row -->
+            <div class="flex items-center gap-6 px-6 pt-5 pb-3 border-b border-gray-100">
+              <button id="tab-pending"
+                      class="pb-2.5 text-[14px] font-bold text-navy border-b-2 border-gold transition-all">
+                Menunggu Konfirmasi
+              </button>
+              <button id="tab-approved"
+                      class="pb-2.5 text-[14px] font-bold text-gray-400 border-b-2 border-transparent hover:text-navy transition-all">
+                Disetujui
+              </button>
+              <button id="tab-rejected"
+                      class="pb-2.5 text-[14px] font-bold text-gray-400 border-b-2 border-transparent hover:text-navy transition-all">
+                Ditolak
+              </button>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left min-w-[600px]">
+                <thead>
+                  <tr class="border-b border-gray-100 bg-gray-50/50">
+                    <th class="py-3.5 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">NAMA LENGKAP</th>
+                    <th class="py-3.5 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">EMAIL</th>
+                    <th class="py-3.5 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">NOMOR TELEPON</th>
+                    <th class="py-3.5 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">TANGGAL MENDAFTAR</th>
+                    <th class="py-3.5 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody id="req-table-body" class="divide-y divide-gray-50 text-[14px]">
+
+                  <!-- Row 1: Pekak Elvira -->
+                  <tr class="hover:bg-gray-50/60 transition-colors req-row row-pending cursor-pointer"
+                      data-name="Pekak Elvira"
+                      data-email="pekak@webmail.id"
+                      data-phone="+62 859 6793 7766"
+                      data-time="14 Juli 2026, 08:15 WIB"
+                      data-img="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80"
+                      data-search="pekak elvira pekak@webmail.id">
+                    <td class="py-4 px-6 font-bold text-navy click-name">Pekak Elvira</td>
+                    <td class="py-4 px-5 text-gray-600 text-[13px]">pekak@webmail.id</td>
+                    <td class="py-4 px-5 text-gray-700 text-[13px]">+62 859 6793 7766</td>
+                    <td class="py-4 px-5 text-gray-700 text-[13px]">14 Juli 2026, 08:15</td>
+                    <td class="py-4 px-6 text-center">
+                      <div class="flex items-center justify-center gap-2">
+                        <button class="btn-icon-approve w-7 h-7 rounded-lg bg-green-app text-white flex items-center justify-center hover:bg-emerald-800 transition-colors" title="Approve Registration">
+                          <i data-lucide="check" class="w-4 h-4"></i>
+                        </button>
+                        <button class="btn-icon-reject w-7 h-7 rounded-lg border border-red-500 text-red-500 flex items-center justify-center hover:bg-red-50 transition-colors" title="Reject Registration">
+                          <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Row 2: Selasih Permata -->
+                  <tr class="hover:bg-gray-50/60 transition-colors req-row row-pending cursor-pointer"
+                      data-name="Selasih Permata"
+                      data-email="pekak@webmail.id"
+                      data-phone="+62 852 2287 7766"
+                      data-time="14 Juli 2026, 08:15 WIB"
+                      data-img="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80"
+                      data-search="selasih permata pekak@webmail.id">
+                    <td class="py-4 px-6 font-bold text-navy click-name">Selasih Permata</td>
+                    <td class="py-4 px-5 text-gray-600 text-[13px]">pekak@webmail.id</td>
+                    <td class="py-4 px-5 text-gray-700 text-[13px]">+62 852 2287 7766</td>
+                    <td class="py-4 px-5 text-gray-700 text-[13px]">14 Juli 2026, 08:15</td>
+                    <td class="py-4 px-6 text-center">
+                      <div class="flex items-center justify-center gap-2">
+                        <button class="btn-icon-approve w-7 h-7 rounded-lg bg-green-app text-white flex items-center justify-center hover:bg-emerald-800 transition-colors" title="Approve Registration">
+                          <i data-lucide="check" class="w-4 h-4"></i>
+                        </button>
+                        <button class="btn-icon-reject w-7 h-7 rounded-lg border border-red-500 text-red-500 flex items-center justify-center hover:bg-red-50 transition-colors" title="Reject Registration">
+                          <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Row 3: Everly Pasundan -->
+                  <tr class="hover:bg-gray-50/60 transition-colors req-row row-pending cursor-pointer"
+                      data-name="Everly Pasundan"
+                      data-email="everlyn@webmail.id"
+                      data-phone="+62 851 9958 4986"
+                      data-time="14 Juli 2026, 08:15 WIB"
+                      data-img="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"
+                      data-search="everly pasundan everlyn@webmail.id">
+                    <td class="py-4 px-6 font-bold text-navy click-name">Everly Pasundan</td>
+                    <td class="py-4 px-5 text-gray-600 text-[13px]">everlyn@webmail.id</td>
+                    <td class="py-4 px-5 text-gray-700 text-[13px]">+62 851 9958 4986</td>
+                    <td class="py-4 px-5 text-gray-700 text-[13px]">14 Juli 2026, 08:15</td>
+                    <td class="py-4 px-6 text-center">
+                      <div class="flex items-center justify-center gap-2">
+                        <button class="btn-icon-approve w-7 h-7 rounded-lg bg-green-app text-white flex items-center justify-center hover:bg-emerald-800 transition-colors" title="Approve Registration">
+                          <i data-lucide="check" class="w-4 h-4"></i>
+                        </button>
+                        <button class="btn-icon-reject w-7 h-7 rounded-lg border border-red-500 text-red-500 flex items-center justify-center hover:bg-red-50 transition-colors" title="Reject Registration">
+                          <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Row 4: Peppermint Baskara (Active in right card) -->
+                  <tr class="hover:bg-gray-50/60 transition-colors req-row row-pending cursor-pointer"
+                      data-name="Peppermint Baskara"
+                      data-email="baskara@webmail.id"
+                      data-phone="+62 812 3456 7890"
+                      data-time="14 Juli 2026, 09:24 WIB"
+                      data-img="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80"
+                      data-search="peppermint baskara baskara@webmail.id">
+                    <td class="py-4 px-6 font-bold text-navy click-name">Peppermint Baskara</td>
+                    <td class="py-4 px-5 text-gray-600 text-[13px]">baskara@webmail.id</td>
+                    <td class="py-4 px-5 text-gray-700 text-[13px]">+62 156 9281 0946</td>
+                    <td class="py-4 px-5 text-gray-700 text-[13px]">14 Juli 2026, 08:15</td>
+                    <td class="py-4 px-6 text-center">
+                      <div class="flex items-center justify-center gap-2">
+                        <button class="btn-icon-approve w-7 h-7 rounded-lg bg-green-app text-white flex items-center justify-center hover:bg-emerald-800 transition-colors" title="Approve Registration">
+                          <i data-lucide="check" class="w-4 h-4"></i>
+                        </button>
+                        <button class="btn-icon-reject w-7 h-7 rounded-lg border border-red-500 text-red-500 flex items-center justify-center hover:bg-red-50 transition-colors" title="Reject Registration">
+                          <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Empty State (Hidden) -->
+          <div id="empty-state" class="hidden p-12 text-center flex flex-col items-center justify-center">
+            <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-3">
+              <i data-lucide="inbox" class="w-8 h-8"></i>
+            </div>
+            <h3 class="font-serif text-[18px] font-bold text-navy mb-1">No pending registration requests.</h3>
+            <p class="text-[13px] text-gray-400">All new guest account requests have been reviewed.</p>
+          </div>
+
+        </div>
+
+        <!-- ═══ KOLOM KANAN (≈37%): APPLICANT PROFILE & TIMELINE ═══ -->
+        <div class="flex flex-col gap-6" style="flex: 0 0 350px;">
+
+          <!-- Applicant Profile Card -->
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center text-center">
+            
+            <!-- Avatar -->
+            <img id="card-photo"
+                 src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80"
+                 alt="Peppermint Baskara"
+                 class="w-20 h-20 rounded-full object-cover border-2 border-gray-100 shadow-sm mb-3" />
+
+            <h3 id="card-name" class="font-serif text-[22px] font-bold text-navy leading-tight">Peppermint Baskara</h3>
+            <span id="card-status" class="text-[13px] font-semibold text-gold mt-0.5 mb-6 block">Menunggu Konfirmasi</span>
+
+            <!-- Info Rows -->
+            <div class="w-full text-left space-y-4 mb-6 text-[13px] border-t border-gray-100 pt-5">
+              <div>
+                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">EMAIL</span>
+                <span id="card-email" class="font-semibold text-navy">Peppermint Baskara@email.com</span>
+              </div>
+              <div>
+                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">NOMOR TELEPON</span>
+                <span id="card-phone" class="font-semibold text-navy">+62 812 3456 7890</span>
+              </div>
+              <div>
+                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">WAKTU PENDAFTARAN</span>
+                <span id="card-time" class="font-semibold text-navy">14 Juli 2026, 09:24 WIB</span>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="w-full space-y-3 mb-6">
+              <button id="btn-approve-account" type="button"
+                      class="w-full bg-green-app hover:bg-emerald-800 text-white font-bold text-[14px] py-3 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                <span>Setujui Akun Ini</span>
+              </button>
+              <button id="btn-reject-account" type="button"
+                      class="w-full border border-red-600 text-red-600 hover:bg-red-50 font-bold text-[14px] py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                <span>Tolak Pendaftaran</span>
+              </button>
+            </div>
+
+            <!-- Catatan Receptionist -->
+            <div class="w-full text-left">
+              <label class="block text-[13px] font-bold text-navy mb-2">Catatan Receptionist</label>
+              <textarea id="receptionist-notes"
+                        rows="3"
+                        placeholder="Contoh: Data tidak valid atau foto identitas buram..."
+                        class="w-full px-3.5 py-3 bg-[#F8F9FA] border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 resize-none focus:outline-none focus:border-navy/30 transition-all"></textarea>
+            </div>
+
+          </div>
+
+          <!-- Activity Timeline Card (Bottom Card) -->
+          <div class="bg-[#F4F5F7] rounded-2xl p-6 border border-gray-200/60 shadow-sm space-y-4">
+            <h3 class="text-[12px] font-bold uppercase tracking-wider text-navy">AKTIVITAS TERAKHIR</h3>
+            
+            <div id="timeline-list" class="space-y-3.5 text-[13px]">
+              <div class="flex items-start gap-2.5">
+                <span class="w-2 h-2 rounded-full bg-navy mt-1.5 flex-shrink-0"></span>
+                <div>
+                  <div class="font-semibold text-navy"><span class="font-bold">Sarah J.</span> melihat detail profil Aditya P.</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">2 menit yang lalu</div>
+                </div>
+              </div>
+              <div class="flex items-start gap-2.5">
+                <span class="w-2 h-2 rounded-full bg-gold mt-1.5 flex-shrink-0"></span>
+                <div>
+                  <div class="font-semibold text-navy">Sistem menerima pendaftaran akun baru.</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">1 jam yang lalu</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════ JAVASCRIPT ══════════════════════ -->
+  <script>
+    lucide.createIcons();
+
+    // ── Toast Helper ──
+    const toast     = document.getElementById('toast');
+    const toastMsg  = document.getElementById('toast-msg');
+    const toastIcon = document.getElementById('toast-icon');
+
+    function showToast(msg, isSuccess = true) {
+      toastMsg.textContent = msg;
+      if (isSuccess) {
+        toast.className = 'fixed top-6 right-6 z-50 flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-0 opacity-100';
+      } else {
+        toast.className = 'fixed top-6 right-6 z-50 flex items-center gap-3 bg-red-800 text-white px-5 py-3.5 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-0 opacity-100';
+      }
+      setTimeout(() => {
+        toast.className = 'fixed top-6 right-6 z-50 flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-[-20px] opacity-0 pointer-events-none';
+      }, 3000);
+    }
+
+    // ── Active Selection & Profile Update ──
+    const reqRows    = document.querySelectorAll('.req-row');
+    const cardPhoto  = document.getElementById('card-photo');
+    const cardName   = document.getElementById('card-name');
+    const cardEmail  = document.getElementById('card-email');
+    const cardPhone  = document.getElementById('card-phone');
+    const cardTime   = document.getElementById('card-time');
+    let activeRow    = document.querySelector('.req-row:last-child');
+
+    reqRows.forEach(row => {
+      row.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-icon-approve') || e.target.closest('.btn-icon-reject')) return;
+        activeRow = this;
+        updateRightCard(this);
+      });
+    });
+
+    function updateRightCard(row) {
+      const name  = row.getAttribute('data-name');
+      const email = row.getAttribute('data-email');
+      const phone = row.getAttribute('data-phone');
+      const time  = row.getAttribute('data-time');
+      const img   = row.getAttribute('data-img');
+
+      cardPhoto.src        = img;
+      cardName.textContent = name;
+      cardEmail.textContent= email;
+      cardPhone.textContent= phone;
+      cardTime.textContent = time;
+    }
+
+    // ── Guest Detail Modal (Click Name) ──
+    const dtModal = document.getElementById('guest-detail-modal');
+    document.querySelectorAll('.click-name').forEach(el => {
+      el.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const row = this.closest('tr');
+        document.getElementById('dt-name').textContent = row.getAttribute('data-name');
+        document.getElementById('dt-email').textContent = row.getAttribute('data-email');
+        document.getElementById('dt-phone').textContent = row.getAttribute('data-phone');
+        dtModal.classList.remove('hidden');
+      });
+    });
+
+    document.getElementById('close-dt-modal').addEventListener('click', () => dtModal.classList.add('hidden'));
+    document.getElementById('btn-close-dt').addEventListener('click', () => dtModal.classList.add('hidden'));
+    dtModal.addEventListener('click', e => { if (e.target === dtModal) dtModal.classList.add('hidden'); });
+
+    // ── Approve Flow ──
+    const approveModal = document.getElementById('approve-modal');
+    const btnApproveAc = document.getElementById('btn-approve-account');
+    const btnCancelApp = document.getElementById('btn-cancel-approve');
+    const btnConfirmApp= document.getElementById('btn-confirm-approve');
+
+    btnApproveAc.addEventListener('click', () => approveModal.classList.remove('hidden'));
+    document.querySelectorAll('.btn-icon-approve').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        activeRow = this.closest('tr');
+        updateRightCard(activeRow);
+        approveModal.classList.remove('hidden');
+      });
+    });
+
+    btnCancelApp.addEventListener('click', () => approveModal.classList.add('hidden'));
+    approveModal.addEventListener('click', e => { if (e.target === approveModal) approveModal.classList.add('hidden'); });
+
+    btnConfirmApp.addEventListener('click', () => {
+      approveModal.classList.add('hidden');
+      showToast('✔ Guest account approved successfully.');
+      
+      // Update timeline
+      const timeline = document.getElementById('timeline-list');
+      const newTime = document.createElement('div');
+      newTime.className = 'flex items-start gap-2.5';
+      newTime.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0"></span><div><div class="font-semibold text-navy"><span class="font-bold">Cengkeh N.</span> me-ridhoi akun ${cardName.textContent}.</div><div class="text-[11px] text-gray-400 mt-0.5">Baru saja</div></div>`;
+      timeline.prepend(newTime);
+
+      if (activeRow) {
+        activeRow.style.transition = 'opacity 0.3s';
+        activeRow.style.opacity = '0';
+        setTimeout(() => activeRow.remove(), 300);
+      }
+    });
+
+    // ── Reject Flow ──
+    const rejectModal  = document.getElementById('reject-modal');
+    const btnRejectAc  = document.getElementById('btn-reject-account');
+    const btnCancelRej = document.getElementById('btn-cancel-reject');
+    const btnConfirmRej= document.getElementById('btn-confirm-reject');
+    const rejectReason = document.getElementById('reject-reason');
+    const otherBox     = document.getElementById('other-reason-box');
+
+    btnRejectAc.addEventListener('click', () => rejectModal.classList.remove('hidden'));
+    document.querySelectorAll('.btn-icon-reject').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        activeRow = this.closest('tr');
+        updateRightCard(activeRow);
+        rejectModal.classList.remove('hidden');
+      });
+    });
+
+    rejectReason.addEventListener('change', function() {
+      if (this.value === 'Other') {
+        otherBox.classList.remove('hidden');
+      } else {
+        otherBox.classList.add('hidden');
+      }
+    });
+
+    btnCancelRej.addEventListener('click', () => rejectModal.classList.add('hidden'));
+    rejectModal.addEventListener('click', e => { if (e.target === rejectModal) rejectModal.classList.add('hidden'); });
+
+    btnConfirmRej.addEventListener('click', () => {
+      rejectModal.classList.add('hidden');
+      showToast('Registration request rejected.', false);
+
+      if (activeRow) {
+        activeRow.style.transition = 'opacity 0.3s';
+        activeRow.style.opacity = '0';
+        setTimeout(() => activeRow.remove(), 300);
+      }
+    });
+
+    // ── Tabs Navigation JS ──
+    const tabPending  = document.getElementById('tab-pending');
+    const tabApproved = document.getElementById('tab-approved');
+    const tabRejected = document.getElementById('tab-rejected');
+
+    tabPending.addEventListener('click', () => {
+      tabPending.className  = 'pb-2.5 text-[14px] font-bold text-navy border-b-2 border-gold transition-all';
+      tabApproved.className = 'pb-2.5 text-[14px] font-bold text-gray-400 border-b-2 border-transparent hover:text-navy transition-all';
+      tabRejected.className = 'pb-2.5 text-[14px] font-bold text-gray-400 border-b-2 border-transparent hover:text-navy transition-all';
+    });
+
+    tabApproved.addEventListener('click', () => {
+      tabApproved.className = 'pb-2.5 text-[14px] font-bold text-navy border-b-2 border-gold transition-all';
+      tabPending.className  = 'pb-2.5 text-[14px] font-bold text-gray-400 border-b-2 border-transparent hover:text-navy transition-all';
+      tabRejected.className = 'pb-2.5 text-[14px] font-bold text-gray-400 border-b-2 border-transparent hover:text-navy transition-all';
+    });
+
+    tabRejected.addEventListener('click', () => {
+      tabRejected.className = 'pb-2.5 text-[14px] font-bold text-navy border-b-2 border-gold transition-all';
+      tabPending.className  = 'pb-2.5 text-[14px] font-bold text-gray-400 border-b-2 border-transparent hover:text-navy transition-all';
+      tabApproved.className = 'pb-2.5 text-[14px] font-bold text-gray-400 border-b-2 border-transparent hover:text-navy transition-all';
+    });
+
+    // ── Header Search ──
+    const headerSearch = document.getElementById('header-search');
+    headerSearch.addEventListener('input', function() {
+      const q = this.value.toLowerCase().trim();
+      reqRows.forEach(row => {
+        const searchData = row.getAttribute('data-search') || '';
+        if (!q || searchData.includes(q)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  </script>
+
+
+  <script>
+    // Mobile Sidebar Toggle
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+</body>
+</html>

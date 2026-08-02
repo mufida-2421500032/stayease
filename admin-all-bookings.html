@@ -1,0 +1,539 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seluruh Data Reservasi – StayEase Property Management</title>
+  <meta name="description" content="Pantau dan kelola semua pemesanan kamar dari seluruh pelanggan dengan sistem manajemen StayEase yang terintegrasi." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:       '#0F2A44',
+            'navy-mid': '#1a3a5c',
+            gold:       '#C89A43',
+            'gold-dark':'#8C6B27',
+            page:       '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color: #F8F7F4; font-family: 'Inter', sans-serif; color: #1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-xl transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-bold text-white
+               bg-gold rounded-xl shadow-sm transition-all duration-150;
+      }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex flex-col bg-page">
+  <!-- Mobile Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+  <div class="flex flex-1 min-h-screen">
+    <!-- ══════════ TOAST NOTIFICATION ══════════ -->
+    <div id="toast"
+         class="fixed top-6 right-6 z-[100] flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl
+                transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none">
+      <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
+      <span id="toast-msg" class="text-[14px] font-semibold">Tindakan berhasil dilaksanakan.</span>
+    </div>
+
+    <!-- ══════════ EXPORT MODAL ══════════ -->
+    <div id="export-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[400px] p-6">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
+          <h3 class="font-serif text-[18px] font-bold text-navy">Export Data Reservasi</h3>
+          <button id="close-export-modal" class="text-gray-400 hover:text-navy">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <p class="text-[13px] text-gray-500 mb-4">Pilih format berkas untuk mengunduh laporan reservasi:</p>
+        <div class="space-y-2.5 mb-5">
+          <button onclick="triggerExport('Excel')" class="w-full flex items-center justify-between p-3.5 border border-gray-200 rounded-xl hover:bg-gray-50 text-[13px] font-semibold text-navy transition-colors">
+            <span class="flex items-center gap-3"><i data-lucide="sheet" class="w-5 h-5 text-emerald-600"></i> Export Excel (.xlsx)</span>
+            <i data-lucide="download" class="w-4 h-4 text-gray-400"></i>
+          </button>
+          <button onclick="triggerExport('CSV')" class="w-full flex items-center justify-between p-3.5 border border-gray-200 rounded-xl hover:bg-gray-50 text-[13px] font-semibold text-navy transition-colors">
+            <span class="flex items-center gap-3"><i data-lucide="file-code" class="w-5 h-5 text-blue-600"></i> Export CSV (.csv)</span>
+            <i data-lucide="download" class="w-4 h-4 text-gray-400"></i>
+          </button>
+          <button onclick="triggerExport('PDF')" class="w-full flex items-center justify-between p-3.5 border border-gray-200 rounded-xl hover:bg-gray-50 text-[13px] font-semibold text-navy transition-colors">
+            <span class="flex items-center gap-3"><i data-lucide="file-text" class="w-5 h-5 text-red-500"></i> Export PDF (.pdf)</span>
+            <i data-lucide="download" class="w-4 h-4 text-gray-400"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+    <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[220px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+      <!-- Logo -->
+      <div class="px-6 pt-6 pb-5 border-b border-white/10">
+        <a href="admin-dashboard.html" class="block">
+          <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+          <span class="text-[10px] font-medium text-white/50 tracking-wider uppercase mt-1 block">MANAGEMENT PORTAL</span>
+        </a>
+      </div>
+
+      <!-- Nav Menu -->
+      <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto no-scrollbar">
+        <a href="admin-dashboard.html" class="sb-link">
+          <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="admin-rooms.html" class="sb-link">
+          <i data-lucide="bed" class="w-[18px] h-[18px] flex-shrink-0"></i>
+          <span>Manage Rooms</span>
+        </a>
+        <a href="admin-room-types.html" class="sb-link">
+          <i data-lucide="layers" class="w-[18px] h-[18px] flex-shrink-0"></i>
+          <span>Manage Room Types</span>
+        </a>
+        <a href="admin-facilities.html" class="sb-link">
+          <i data-lucide="sparkles" class="w-[18px] h-[18px] flex-shrink-0"></i>
+          <span>Manage Facilities</span>
+        </a>
+        <a href="admin-receptionists.html" class="sb-link">
+          <i data-lucide="user-cog" class="w-[18px] h-[18px] flex-shrink-0"></i>
+          <span>Manage Receptionist</span>
+        </a>
+        <a href="admin-all-bookings.html" class="sb-link-active" aria-current="page">
+          <i data-lucide="calendar" class="w-[18px] h-[18px] flex-shrink-0"></i>
+          <span>All Bookings</span>
+        </a>
+        <a href="admin-reports.html" class="sb-link">
+          <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+          <span>Reports</span>
+        </a>
+      </nav>
+
+      <!-- Bottom Menu -->
+      <div class="px-4 py-5 border-t border-white/10 space-y-1">
+        <a href="#" onclick="showToast('Support'); return false;" class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+          <i data-lucide="help-circle" class="w-4 h-4"></i>
+          <span>Support</span>
+        </a>
+        <a href="login.html" class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          <span>Logout</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+    <div id="main-wrapper" class="flex-1 lg:ml-[220px] flex flex-col min-h-screen w-full">
+
+      <!-- Top Navigation Header -->
+      <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm flex-wrap lg:flex-nowrap">
+        
+        <button id="mobile-menu-btn" class="lg:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Menu">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Search Bar (Left) -->
+        <div class="relative w-full max-w-sm">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+            <i data-lucide="search" class="w-4 h-4"></i>
+          </div>
+          <input id="top-search-input" type="text" placeholder="Cari nama customer"
+                 class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-navy/30 transition-all" />
+        </div>
+
+        <!-- Right Actions -->
+        <div class="flex items-center gap-3 ml-auto">
+          <button onclick="showToast('Notifikasi Terbaru');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+          </button>
+          <button onclick="showToast('Pengaturan Sistem');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+            <i data-lucide="settings" class="w-5 h-5"></i>
+          </button>
+          <div class="h-6 w-px bg-gray-200"></div>
+          <div class="flex items-center gap-3">
+            <div class="text-right hidden sm:block">
+              <div class="text-[13px] font-bold text-navy leading-tight">Merica Wibisono</div>
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">ADMINISTRATOR</span>
+            </div>
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+                 class="w-9 h-9 rounded-full object-cover border-2 border-gold/40 shadow-sm" alt="Merica Wibisono" />
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Workspace -->
+      <main class="flex-1 px-4 sm:px-8 py-8 max-w-[1240px] w-full overflow-x-hidden">
+
+        <!-- Header Section -->
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+          <div>
+            <h1 class="font-serif text-[36px] font-bold text-navy leading-tight mb-1">Seluruh Data Reservasi</h1>
+            <p class="text-[15px] text-gray-500 max-w-2xl leading-relaxed">
+              Pantau dan kelola semua pemesanan kamar dari seluruh pelanggan dengan sistem manajemen StayEase yang terintegrasi.
+            </p>
+          </div>
+
+          <!-- Refresh Button -->
+          <button id="btn-reload"
+                  class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-[13px] font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm flex-shrink-0">
+            <i id="reload-icon" data-lucide="rotate-cw" class="w-4 h-4 text-gray-500"></i>
+            <span>Muat Ulang</span>
+          </button>
+        </div>
+
+        <!-- Filter Card -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
+
+            <!-- Filter Status Booking -->
+            <div class="md:col-span-4">
+              <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">STATUS BOOKING</label>
+              <div class="relative">
+                <select id="status-select" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13px] font-semibold text-gray-700 focus:outline-none focus:bg-white focus:border-navy/30 transition-all appearance-none cursor-pointer">
+                  <option value="all" selected>Semua Status</option>
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Checked In">Checked In</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Checked Out">Checked Out</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                  <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Filter Rentang Tanggal -->
+            <div class="md:col-span-5">
+              <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">RENTANG TANGGAL</label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                  <i data-lucide="calendar" class="w-4 h-4"></i>
+                </div>
+                <input id="date-range" type="text" value="01 Jan 2026 - 31 Jan 2026" readonly
+                       class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13px] font-semibold text-gray-700 focus:outline-none focus:bg-white focus:border-navy/30 transition-all cursor-pointer" />
+              </div>
+            </div>
+
+            <!-- Tombol Export Data -->
+            <div class="md:col-span-3 flex justify-start md:justify-end">
+              <button id="btn-open-export"
+                      class="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-navy hover:bg-navy-mid text-white text-[13px] font-bold rounded-xl shadow-md transition-colors">
+                <i data-lucide="upload" class="w-4 h-4"></i>
+                <span>Export Data</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Data Table Card -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left min-w-[950px]">
+              <thead>
+                <tr class="border-b border-gray-100 bg-gray-50/50">
+                  <th class="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">NAMA CUSTOMER</th>
+                  <th class="py-4 px-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">NOMOR KAMAR</th>
+                  <th class="py-4 px-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">TIPE KAMAR</th>
+                  <th class="py-4 px-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">CHECK-IN</th>
+                  <th class="py-4 px-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">CHECK-OUT</th>
+                  <th class="py-4 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">TOTAL HARGA</th>
+                  <th class="py-4 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">STATUS</th>
+                  <th class="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">DIBUAT</th>
+                </tr>
+              </thead>
+              <tbody id="booking-table-body" class="divide-y divide-gray-100 text-[14px]">
+
+                <!-- Row 1: Ketumbar Anindya -->
+                <tr class="hover:bg-gray-50/60 transition-colors booking-row" data-search="ketumbar anindya ketumbar@email.com room 402 402" data-status="Confirmed">
+                  <td class="py-4 px-6">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold text-[12px] flex items-center justify-center flex-shrink-0">
+                        KA
+                      </div>
+                      <div>
+                        <div class="font-bold text-navy leading-snug">Ketumbar Anindya</div>
+                        <div class="text-[12px] text-gray-400">ketumbar@email.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4">
+                    <div class="font-semibold text-gray-700 leading-snug">Room 402</div>
+                  </td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">Executive Suite</td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">15 Juli 2026</td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">18 Juli 2026</td>
+                  <td class="py-4 px-5 font-bold text-navy">Rp 4.500.000</td>
+                  <td class="py-4 px-5">
+                    <span class="inline-block bg-blue-100 text-blue-600 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+                      CONFIRMED
+                    </span>
+                  </td>
+                  <td class="py-4 px-6 text-gray-500 font-medium text-[13px]">12 Juli 2026</td>
+                </tr>
+
+                <!-- Row 2: Kapulaga Wirawan -->
+                <tr class="hover:bg-gray-50/60 transition-colors booking-row" data-search="kapulaga wirawan kapulaga@email.com room 205 205" data-status="Checked In">
+                  <td class="py-4 px-6">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-800 font-bold text-[12px] flex items-center justify-center flex-shrink-0">
+                        KW
+                      </div>
+                      <div>
+                        <div class="font-bold text-navy leading-snug">Kapulaga Wirawan</div>
+                        <div class="text-[12px] text-gray-400">kapulaga@email.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4">
+                    <div class="font-semibold text-gray-700 leading-snug">Room 205</div>
+                  </td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">Deluxe Twin</td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">12 Juli 2026</td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">14 Juli 2026</td>
+                  <td class="py-4 px-5 font-bold text-navy">Rp 2.400.000</td>
+                  <td class="py-4 px-5">
+                    <span class="inline-block bg-emerald-100 text-emerald-700 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+                      CHECKED IN
+                    </span>
+                  </td>
+                  <td class="py-4 px-6 text-gray-500 font-medium text-[13px]">12 Juli 2026</td>
+                </tr>
+
+                <!-- Row 3: Kemangi Ardana -->
+                <tr class="hover:bg-gray-50/60 transition-colors booking-row" data-search="kemangi ardana kemangi@email.com room 108 108" data-status="Pending">
+                  <td class="py-4 px-6">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-full bg-gray-200 text-gray-700 font-bold text-[12px] flex items-center justify-center flex-shrink-0">
+                        KA
+                      </div>
+                      <div>
+                        <div class="font-bold text-navy leading-snug">Kemangi Ardana</div>
+                        <div class="text-[12px] text-gray-400">kemangi@email.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4">
+                    <div class="font-semibold text-gray-700 leading-snug">Room 108</div>
+                  </td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">Standard Single</td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">20 Juli 2026</td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">22 Juli 2026</td>
+                  <td class="py-4 px-5 font-bold text-navy">Rp 1.100.000</td>
+                  <td class="py-4 px-5">
+                    <span class="inline-block bg-amber-100 text-amber-700 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+                      PENDING
+                    </span>
+                  </td>
+                  <td class="py-4 px-6 text-gray-500 font-medium text-[13px]">20 Juli 2026</td>
+                </tr>
+
+                <!-- Row 4: Erlangga Pala -->
+                <tr class="hover:bg-gray-50/60 transition-colors booking-row" data-search="erlangga pala erlangga@email.com room 312 312" data-status="Checked Out">
+                  <td class="py-4 px-6">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 font-bold text-[12px] flex items-center justify-center flex-shrink-0">
+                        EP
+                      </div>
+                      <div>
+                        <div class="font-bold text-navy leading-snug">Erlangga Pala</div>
+                        <div class="text-[12px] text-gray-400">erlangga@email.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4">
+                    <div class="font-semibold text-gray-700 leading-snug">Room 312</div>
+                  </td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">Grand Deluxe</td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">08 Juli 2026</td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">11 Juli 2026</td>
+                  <td class="py-4 px-5 font-bold text-navy">Rp 3.750.000</td>
+                  <td class="py-4 px-5">
+                    <span class="inline-block bg-gray-100 text-gray-600 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+                      CHECKED OUT
+                    </span>
+                  </td>
+                  <td class="py-4 px-6 text-gray-500 font-medium text-[13px]">08 Juli 2026</td>
+                </tr>
+
+                <!-- Row 5: Paprika Elvano -->
+                <tr class="hover:bg-gray-50/60 transition-colors booking-row" data-search="paprika elvano paprika@email.com room 101 101" data-status="Cancelled">
+                  <td class="py-4 px-6">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-full bg-red-100 text-red-600 font-bold text-[12px] flex items-center justify-center flex-shrink-0">
+                        PE
+                      </div>
+                      <div>
+                        <div class="font-bold text-navy leading-snug">Paprika Elvano</div>
+                        <div class="text-[12px] text-gray-400">paprika@email.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4">
+                    <div class="font-semibold text-gray-700 leading-snug">Room 101</div>
+                  </td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">Standard Single</td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">14 Juli 2026</td>
+                  <td class="py-4 px-4 text-gray-600 font-medium">15 Juli 2026</td>
+                  <td class="py-4 px-5 font-bold text-navy">Rp 550.000</td>
+                  <td class="py-4 px-5">
+                    <span class="inline-block bg-red-100 text-red-600 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+                      CANCELLED
+                    </span>
+                  </td>
+                  <td class="py-4 px-6 text-gray-500 font-medium text-[13px]">14 Juli 2026</td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Table Footer / Pagination -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-100 bg-gray-50/30">
+            <p id="showing-count" class="text-[13px] text-gray-500 font-medium">Menampilkan 1-5 dari 128 reservasi</p>
+            <div class="flex items-center gap-1.5">
+              <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-100 transition-colors">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-navy text-white text-[13px] font-bold shadow-sm">1</button>
+              <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-[13px] font-medium transition-colors">2</button>
+              <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-[13px] font-medium transition-colors">3</button>
+              <span class="px-1 text-gray-400 text-[13px]">...</span>
+              <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-[13px] font-medium transition-colors">26</button>
+              <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-100 transition-colors">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- Footer -->
+      <footer class="border-t border-gray-200/60 py-4 px-8 text-[12px] text-gray-400 flex flex-col sm:flex-row items-center justify-between gap-2 mt-auto">
+        <div>© 2026 StayEase Property Management System. Hak Cipta Dilindungi.</div>
+        <div class="flex items-center gap-4">
+          <a href="#" onclick="showToast('Kebijakan Privasi'); return false;" class="hover:text-navy transition-colors">Kebijakan Privasi</a>
+          <a href="#" onclick="showToast('Bantuan'); return false;" class="hover:text-navy transition-colors">Bantuan</a>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ══════════ JAVASCRIPT ══════════ -->
+  <script>
+    lucide.createIcons();
+
+    // Toast Helper
+    function showToast(msg) {
+      document.getElementById('toast-msg').textContent = msg;
+      const t = document.getElementById('toast');
+      t.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'), 3000);
+    }
+
+    // Export Modal Logic
+    const exportModal = document.getElementById('export-modal');
+    document.getElementById('btn-open-export').addEventListener('click', () => exportModal.classList.remove('hidden'));
+    document.getElementById('close-export-modal').addEventListener('click', () => exportModal.classList.add('hidden'));
+    exportModal.addEventListener('click', e => { if (e.target === exportModal) exportModal.classList.add('hidden'); });
+
+    function triggerExport(format) {
+      exportModal.classList.add('hidden');
+      showToast(`Mengunduh data reservasi dalam format ${format}...`);
+    }
+
+    // Reload Button (Muat Ulang)
+    const btnReload = document.getElementById('btn-reload');
+    const reloadIcon = document.getElementById('reload-icon');
+    btnReload.addEventListener('click', () => {
+      reloadIcon.classList.add('animate-spin');
+      showToast('Memuat ulang data reservasi...');
+      setTimeout(() => {
+        reloadIcon.classList.remove('animate-spin');
+        applyFilters();
+      }, 600);
+    });
+
+    // Realtime Search & Filter Logic
+    const searchInput = document.getElementById('top-search-input');
+    const statusSelect = document.getElementById('status-select');
+    const rows = document.querySelectorAll('.booking-row');
+
+    function applyFilters() {
+      const q = searchInput.value.toLowerCase().trim();
+      const st = statusSelect.value;
+      let visible = 0;
+
+      rows.forEach(row => {
+        const text = row.getAttribute('data-search') || '';
+        const status = row.getAttribute('data-status') || '';
+        const matchSearch = !q || text.includes(q);
+        const matchStatus = st === 'all' || status === st;
+
+        if (matchSearch && matchStatus) {
+          row.style.display = '';
+          visible++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      document.getElementById('showing-count').textContent = `Menampilkan ${visible > 0 ? '1-' + visible : '0'} dari 128 reservasi`;
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    statusSelect.addEventListener('change', applyFilters);
+
+    // Date Range Picker simulation
+    document.getElementById('date-range').addEventListener('click', function() {
+      showToast('Date Range Picker: 01 Jan 2026 - 31 Jan 2026');
+    });
+
+    // Mobile Sidebar Toggle
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+
+</body>
+</html>

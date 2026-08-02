@@ -1,0 +1,452 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pengaturan Profil â€“ StayEase</title>
+  <meta name="description" content="Halaman pengaturan dan edit profil customer StayEase." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Tailwind custom config (identical tokens) -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              DEFAULT: '#0F2A44',
+              light:   '#183654',
+            },
+            cream: '#FCF9F5',
+            gold:  '#C89A43',
+            page:  '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  
+  
+  <style type="text/tailwindcss">
+    @layer base {
+      html { scroll-behavior: smooth; }
+      body {
+        background-color: #F8F8F8;
+        font-family: 'Inter', sans-serif;
+        color: #1F2937;
+      }
+    }
+
+    @layer components {
+      .sidebar-link {
+        @apply flex items-center gap-3 px-4 py-3 text-[15px] font-medium text-gray-600 rounded-lg
+               hover:bg-gray-100 hover:text-navy transition-all duration-150 relative;
+      }
+      .sidebar-link-active {
+        @apply flex items-center gap-3 px-4 py-3 text-[15px] font-bold text-navy bg-gray-100 rounded-lg relative;
+      }
+      .sidebar-link-active::after {
+        content: '';
+        @apply absolute right-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-gold rounded-l;
+      }
+    }
+
+    @media (min-width: 768px) {
+      #hamburger-btn, #mobile-menu { display: none !important; }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen bg-page flex">
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 bg-navy text-white px-6 py-3.5 rounded-xl shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <i data-lucide="check-circle-2" class="w-5 h-5 text-gold"></i>
+    <span class="text-[14px] font-medium">Profil berhasil diperbarui.</span>
+  </div>
+
+  <!-- ============================================================
+       MOBILE SIDEBAR OVERLAY & DRAWER
+  ============================================================ -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden" aria-hidden="true"></div>
+
+  <!-- ============================================================
+       SIDEBAR (FIXED LEFT)
+  ============================================================ -->
+    <aside id="sidebar"
+         class="fixed top-0 left-0 bottom-0 z-50 w-[260px] xl:w-[280px] bg-white border-r border-gray-200
+                flex flex-col justify-between p-6 transition-transform duration-300 lg:translate-x-0 -translate-x-full"
+         aria-label="Navigasi Utama Dashboard">
+
+    <!-- Top Section: Brand & Nav Links -->
+    <div>
+      <!-- Brand Logo -->
+      <div class="mb-10 pl-2">
+        <a href="index.html" class="block">
+          <span class="font-serif text-[32px] font-bold text-navy tracking-tight leading-none block">StayEase</span>
+          <span class="text-[13px] text-gray-500 font-normal tracking-wide block mt-1">Property Management</span>
+        </a>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="space-y-1.5" role="navigation" aria-label="Menu Sidebar">
+        <a href="customer-dashboard.html" class="sidebar-link" >
+          <i data-lucide="layout-grid" class="w-5 h-5 text-gray-500" aria-hidden="true"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="customer-rooms.html" class="sidebar-link" >
+          <i data-lucide="bed" class="w-5 h-5 text-gray-500" aria-hidden="true"></i>
+          <span>Rooms</span>
+        </a>
+        <a href="history.html" class="sidebar-link" >
+          <i data-lucide="history" class="w-5 h-5 text-gray-500" aria-hidden="true"></i>
+          <span>Riwayat</span>
+        </a>
+        <a href="settings.html" class="sidebar-link-active" aria-current="page">
+          <i data-lucide="settings" class="w-5 h-5 text-navy" aria-hidden="true"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Bottom Section: Logout -->
+    <div class="pt-6 border-t border-gray-100">
+      <a href="login.html" id="btn-logout" class="flex items-center gap-3 px-4 py-3 text-[15px] font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-5 h-5 text-red-500" aria-hidden="true"></i>
+        <span>Keluar</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ============================================================
+       MAIN CONTENT WRAPPER
+  ============================================================ -->
+  <div class="flex-1 lg:ml-[260px] xl:ml-[280px] flex flex-col min-h-screen min-w-0">
+
+    <!-- ============================================================
+         TOP NAVIGATION BAR
+    ============================================================ -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 px-6 lg:px-10 py-3.5 flex items-center justify-between gap-4">
+
+      <!-- Left: Mobile Menu Button & Search Input -->
+      <div class="flex items-center gap-3 flex-1 max-w-md">
+        <button id="mobile-menu-btn" class="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg" aria-label="Buka Sidebar Menu">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+
+        <!-- Search Box -->
+        <div class="relative w-full">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+            <i data-lucide="search" class="w-4 h-4"></i>
+          </div>
+          <input type="text"
+                 placeholder="Search for rooms or guests..."
+                 class="w-full pl-10 pr-4 py-2 bg-gray-100 border border-transparent rounded-full text-[14px] text-gray-800 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-gray-300 transition-all" />
+        </div>
+      </div>
+
+      <!-- Right: Action Icons & Profile -->
+      <div class="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+        <button class="p-2 text-gray-500 hover:text-navy hover:bg-gray-100 rounded-full transition-colors relative" aria-label="Notifikasi">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-gold rounded-full"></span>
+        </button>
+
+        <button class="p-2 text-gray-500 hover:text-navy hover:bg-gray-100 rounded-full transition-colors" aria-label="Bantuan">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+
+        <button class="p-2 text-gray-500 hover:text-navy hover:bg-gray-100 rounded-full transition-colors" aria-label="Aplikasi Grid">
+          <i data-lucide="grid" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Vertical Divider -->
+        <div class="w-px h-6 bg-gray-200 hidden sm:block"></div>
+
+        <!-- Profile Widget -->
+        <div class="flex items-center gap-3">
+          <div class="text-right hidden sm:block">
+            <div class="text-[14px] font-bold text-navy leading-none">Kemangi Ardana</div>
+            <div class="text-[11px] font-bold text-gold tracking-wider mt-1 uppercase">GOLD MEMBER</div>
+          </div>
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+               alt="Foto Profil Kemangi Ardana"
+               class="w-10 h-10 rounded-full object-cover border-2 border-gold/30 shadow-sm" />
+        </div>
+      </div>
+
+    </header>
+
+    <!-- ============================================================
+         CONTENT AREA
+    ============================================================ -->
+    <main class="flex-1 px-6 lg:px-10 py-8 space-y-7 max-w-[1100px]">
+
+      <!-- â”€â”€ HEADING â”€â”€ -->
+      <div>
+        <h1 class="font-serif text-[36px] sm:text-[48px] font-bold text-navy leading-tight">
+          Pengaturan Profil
+        </h1>
+      </div>
+
+      <!-- â”€â”€ CARD PROFILE MAIN CONTAINER â”€â”€ -->
+      <section class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" aria-label="Form Pengaturan Profil">
+
+        <!-- Cover Profile Bar -->
+        <div class="h-32 bg-gray-100/70 border-b border-gray-100"></div>
+
+        <!-- Avatar & Upload Info Container -->
+        <div class="px-8 sm:px-10 pt-0 pb-8 border-b border-gray-100">
+          <div class="relative -mt-16 inline-block">
+            <!-- Avatar Image -->
+            <img id="avatar-preview"
+                 src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"
+                 alt="Avatar Kemangi Ardana"
+                 class="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-md" />
+
+            <!-- Floating Edit Pencil Button -->
+            <label for="avatar-input"
+                   class="absolute bottom-1 right-1 bg-navy hover:bg-[#1a3a5c] text-white p-2 rounded-full shadow-md cursor-pointer transition-transform hover:scale-105"
+                   title="Ubah Foto Profil">
+              <i data-lucide="pencil" class="w-4 h-4"></i>
+              <input type="file" id="avatar-input" accept="image/jpeg,image/png" class="hidden" />
+            </label>
+          </div>
+
+          <!-- Upload Photo Text -->
+          <div class="mt-2">
+            <button type="button" onclick="document.getElementById('avatar-input').click()" class="text-[14px] font-semibold text-gold hover:underline block">
+              Ubah Foto
+            </button>
+            <p class="text-[12px] text-gray-400 mt-0.5">
+              Maksimum 2MB. Format JPG, PNG.
+            </p>
+          </div>
+        </div>
+
+        <!-- FORM CONTENT -->
+        <form id="settings-form" action="#" method="POST" onsubmit="return false;" class="p-8 sm:p-10 space-y-10">
+
+          <!-- â”€â”€ SECTION 1: Informasi Pribadi â”€â”€ -->
+          <div class="space-y-6">
+            <div>
+              <div class="flex items-center gap-2.5 mb-2">
+                <i data-lucide="user" class="w-5 h-5 text-navy"></i>
+                <h2 class="text-[22px] sm:text-[28px] font-semibold text-navy">
+                  Informasi Pribadi
+                </h2>
+              </div>
+              <div class="border-t border-gray-100"></div>
+            </div>
+
+            <div class="space-y-5">
+              <!-- Row 1: Nama Lengkap & Nomor Telepon (2 cols) -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+
+                <!-- Nama Lengkap -->
+                <div>
+                  <label for="fullname" class="form-label">Nama Lengkap</label>
+                  <input type="text"
+                         id="fullname"
+                         name="fullname"
+                         value="Kemangi Ardana"
+                         class="form-input" />
+                </div>
+
+                <!-- Nomor Telepon -->
+                <div>
+                  <label for="phone" class="form-label">Nomor Telepon</label>
+                  <input type="tel"
+                         id="phone"
+                         name="phone"
+                         value="+62 812 3456 7890"
+                         class="form-input" />
+                </div>
+
+              </div>
+
+              <!-- Row 2: Alamat Email (Full Width, Readonly) -->
+              <div>
+                <label for="email" class="form-label">Alamat Email</label>
+                <div class="relative">
+                  <input type="email"
+                         id="email"
+                         name="email"
+                         value="kemangi.h@stayease.com"
+                         readonly
+                         class="form-input-readonly pr-10" />
+                  <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                    <i data-lucide="lock" class="w-4 h-4"></i>
+                  </div>
+                </div>
+                <p class="text-[12px] text-gray-400 italic mt-1.5">
+                  Kontak admin untuk mengubah alamat email terdaftar.
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- â”€â”€ SECTION 2: Ubah Password â”€â”€ -->
+          <div class="space-y-6 pt-2">
+            <div>
+              <div class="flex items-center gap-2.5 mb-2">
+                <i data-lucide="lock" class="w-5 h-5 text-navy"></i>
+                <h2 class="text-[22px] sm:text-[28px] font-semibold text-navy">
+                  Ubah Password
+                </h2>
+              </div>
+              <div class="border-t border-gray-100"></div>
+            </div>
+
+            <div class="space-y-5">
+              <!-- Password Lama (Full width) -->
+              <div>
+                <label for="old-password" class="form-label">Password Lama</label>
+                <input type="password"
+                       id="old-password"
+                       name="old_password"
+                       placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                       class="form-input" />
+              </div>
+
+              <!-- Password Baru & Konfirmasi (2 cols) -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+
+                <!-- Password Baru -->
+                <div>
+                  <label for="new-password" class="form-label">Password Baru</label>
+                  <input type="password"
+                         id="new-password"
+                         name="new_password"
+                         placeholder="Password baru"
+                         class="form-input" />
+                </div>
+
+                <!-- Konfirmasi Password Baru -->
+                <div>
+                  <label for="confirm-password" class="form-label">Konfirmasi Password Baru</label>
+                  <input type="password"
+                         id="confirm-password"
+                         name="confirm_password"
+                         placeholder="Ulangi password"
+                         class="form-input" />
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- â”€â”€ FOOTER CARD BUTTONS (Right Aligned) â”€â”€ -->
+          <div class="pt-6 border-t border-gray-100 flex items-center justify-end gap-5">
+            <button type="button"
+                    onclick="history.back()"
+                    class="text-[15px] font-medium text-gray-600 hover:text-navy transition-colors px-2 py-2">
+              Batal
+            </button>
+            <button type="submit"
+                    id="btn-save-settings"
+                    class="bg-navy hover:bg-[#1a3a5c] text-white font-semibold text-[16px] px-7 py-3 rounded-xl transition-all duration-150 shadow-md">
+              Simpan Perubahan
+            </button>
+          </div>
+
+        </form>
+
+      </section>
+
+    </main>
+
+    <!-- ============================================================
+         FOOTER WEBSITE
+    ============================================================ -->
+    <footer class="bg-white border-t border-gray-100 px-6 lg:px-10 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-[13px] text-gray-500 mt-auto">
+      <span>Â© 2024 StayEase Property Management System. All rights reserved.</span>
+      <div class="flex items-center gap-5">
+        <a href="#" class="hover:text-navy transition-colors">Privacy Policy</a>
+        <a href="#" class="hover:text-navy transition-colors">Terms of Service</a>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ============================================================
+       JAVASCRIPT
+  ============================================================ -->
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // â”€â”€ Mobile Sidebar Drawer Toggle â”€â”€
+    (function () {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+
+      function openSidebar()  { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full');    overlay.classList.add('hidden'); }
+
+      if (menuBtn) menuBtn.addEventListener('click', openSidebar);
+      if (overlay)  overlay.addEventListener('click', closeSidebar);
+    }());
+
+    // â”€â”€ Avatar Preview Upload â”€â”€
+    (function () {
+      const avatarInput = document.getElementById('avatar-input');
+      const avatarPreview = document.getElementById('avatar-preview');
+
+      if (avatarInput && avatarPreview) {
+        avatarInput.addEventListener('change', function (e) {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function (evt) {
+              avatarPreview.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+    }());
+
+    // â”€â”€ Form Save Toast Notification â”€â”€
+    (function () {
+      const form = document.getElementById('settings-form');
+      const toast = document.getElementById('toast');
+
+      if (form && toast) {
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+
+          // Show Toast
+          toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+
+          // Hide Toast after 3 seconds
+          setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+          }, 3000);
+        });
+      }
+    }());
+  </script>
+
+</body>
+</html>
+
+

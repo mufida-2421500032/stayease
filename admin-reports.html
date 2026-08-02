@@ -1,0 +1,564 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reports & Analytics – StayEase Property Management</title>
+  <meta name="description" content="Ringkasan performa hotel, statistik booking, okupansi kamar, dan laporan pendapatan." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:       '#0F2A44',
+            'navy-mid': '#1a3a5c',
+            gold:       '#C89A43',
+            'gold-dark':'#8C6B27',
+            page:       '#F8F7F4',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      body { background-color: #F8F7F4; font-family: 'Inter', sans-serif; color: #1F2937; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    }
+    @layer components {
+      .sb-link {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-white/70
+               hover:text-white hover:bg-white/10 rounded-xl transition-all duration-150;
+      }
+      .sb-link-active {
+        @apply flex items-center gap-3 px-4 py-2.5 text-[14px] font-bold text-white
+               bg-gold rounded-xl shadow-sm transition-all duration-150;
+      }
+    }
+  </style>
+
+  <style>
+    /* Progress bar animation */
+    .progress-fill {
+      width: 0%;
+      transition: width 900ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    /* Month picker tooltip */
+    .month-picker {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+      z-index: 100;
+      padding: 16px;
+      min-width: 240px;
+    }
+    .month-picker.open { display: block; }
+    .month-btn {
+      width: 100%;
+      padding: 8px 14px;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      border-radius: 10px;
+      transition: background 150ms;
+    }
+    .month-btn:hover { background: #F3F4F6; }
+    .month-btn.active { background: #0F2A44; color: white; }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen flex flex-col bg-page">
+  <!-- Mobile Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+
+  <div class="flex flex-1">
+
+    <!-- ══════════ TOAST ══════════ -->
+    <div id="toast"
+         class="fixed top-6 right-6 z-[100] flex items-center gap-3 bg-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl
+                transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none">
+      <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
+      <span id="toast-msg" class="text-[14px] font-semibold">Tindakan berhasil dilaksanakan.</span>
+    </div>
+
+    <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+    <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-50 w-[220px] bg-navy flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300">
+      <div class="px-6 pt-6 pb-5 border-b border-white/10">
+        <a href="admin-dashboard.html" class="block">
+          <span class="font-serif text-[38px] font-bold text-gold leading-none block">StayEase</span>
+          <span class="text-[10px] font-medium text-white/50 tracking-wider uppercase mt-1 block">MANAGEMENT PORTAL</span>
+        </a>
+      </div>
+      <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto no-scrollbar">
+        <a href="admin-dashboard.html" class="sb-link">
+          <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i><span>Dashboard</span>
+        </a>
+        <a href="admin-rooms.html" class="sb-link">
+          <i data-lucide="bed" class="w-[18px] h-[18px] flex-shrink-0"></i><span>Manage Rooms</span>
+        </a>
+        <a href="admin-room-types.html" class="sb-link">
+          <i data-lucide="layers" class="w-[18px] h-[18px] flex-shrink-0"></i><span>Manage Room Types</span>
+        </a>
+        <a href="admin-facilities.html" class="sb-link">
+          <i data-lucide="sparkles" class="w-[18px] h-[18px] flex-shrink-0"></i><span>Manage Facilities</span>
+        </a>
+        <a href="admin-receptionists.html" class="sb-link">
+          <i data-lucide="user-cog" class="w-[18px] h-[18px] flex-shrink-0"></i><span>Manage Receptionist</span>
+        </a>
+        <a href="admin-all-bookings.html" class="sb-link">
+          <i data-lucide="calendar" class="w-[18px] h-[18px] flex-shrink-0"></i><span>All Bookings</span>
+        </a>
+        <a href="admin-reports.html" class="sb-link-active" aria-current="page">
+          <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i><span>Reports</span>
+        </a>
+      </nav>
+      <div class="px-4 py-5 border-t border-white/10 space-y-1">
+        <a href="#" onclick="showToast('Support'); return false;" class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+          <i data-lucide="help-circle" class="w-4 h-4"></i><span>Support</span>
+        </a>
+        <a href="login.html" class="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+          <i data-lucide="log-out" class="w-4 h-4"></i><span>Logout</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- ══════════════════════ MAIN CONTENT ══════════════════════ -->
+    <div id="main-wrapper" class="flex-1 lg:ml-[220px] flex flex-col min-h-screen w-full">
+
+      <!-- Topbar -->
+      <header class="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-sm flex-wrap lg:flex-nowrap">
+        
+        <button id="mobile-menu-btn" class="lg:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg flex-shrink-0" aria-label="Buka Menu">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+        <div class="flex-1"></div>
+        <div class="flex items-center gap-3 ml-auto">
+          <button onclick="showToast('Notifikasi Terbaru');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+          </button>
+          <button onclick="showToast('Pengaturan Sistem');" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+            <i data-lucide="settings" class="w-5 h-5"></i>
+          </button>
+          <div class="h-6 w-px bg-gray-200"></div>
+          <div class="flex items-center gap-3">
+            <div class="text-right hidden sm:block">
+              <div class="text-[13px] font-bold text-navy leading-tight">Merica Wibisono</div>
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">ADMINISTRATOR</span>
+            </div>
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+                 class="w-9 h-9 rounded-full object-cover border-2 border-gold/40 shadow-sm" alt="Admin" />
+          </div>
+        </div>
+      </header>
+
+      <!-- Workspace -->
+      <main class="flex-1 px-4 sm:px-8 py-8 w-full overflow-x-hidden">
+
+        <!-- ── PAGE HEADER ── -->
+        <div class="flex items-start justify-between gap-4 mb-6">
+          <div>
+            <h1 class="font-serif text-[36px] font-bold text-navy leading-tight mb-1">Ringkasan Performa</h1>
+            <p id="period-label" class="text-[15px] text-gray-500">Periode: 1 Jan 2026 – 31 Jan 2026</p>
+          </div>
+          <!-- Month Picker Button -->
+          <div class="relative flex-shrink-0">
+            <button id="month-btn"
+                    class="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[13px] font-semibold text-gray-700 hover:bg-gray-50 shadow-sm transition-colors">
+              <i data-lucide="calendar" class="w-4 h-4 text-gray-500"></i>
+              <span id="month-label">Januari 2026</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400"></i>
+            </button>
+            <!-- Dropdown -->
+            <div id="month-picker" class="month-picker">
+              <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">Pilih Periode</p>
+              <div class="space-y-0.5">
+                <button class="month-btn active" onclick="selectMonth('Januari 2026', '1 Jan 2026 – 31 Jan 2026')">Januari 2026</button>
+                <button class="month-btn" onclick="selectMonth('Februari 2026', '1 Feb 2026 – 29 Feb 2026')">Februari 2026</button>
+                <button class="month-btn" onclick="selectMonth('Maret 2026', '1 Mar 2026 – 31 Mar 2026')">Maret 2026</button>
+                <button class="month-btn" onclick="selectMonth('April 2026', '1 Apr 2026 – 30 Apr 2026')">April 2026</button>
+                <button class="month-btn" onclick="selectMonth('Mei 2026', '1 Mei 2026 – 31 Mei 2026')">Mei 2026</button>
+                <button class="month-btn" onclick="selectMonth('Juni 2026', '1 Jun 2026 – 30 Jun 2026')">Juni 2026</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TOP CARDS: Booking Status + Occupancy ── -->
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 mb-6">
+
+          <!-- CARD 1: Booking Status -->
+          <div class="bg-white rounded-[20px] border border-gray-100 shadow-sm p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="font-serif text-[20px] font-bold text-navy">Jumlah Booking per Status</h2>
+              <button class="text-gray-400 hover:text-navy transition-colors" title="Informasi">
+                <i data-lucide="info" class="w-4.5 h-4.5"></i>
+              </button>
+            </div>
+
+            <div class="space-y-4" id="progress-bars">
+
+              <!-- Pending -->
+              <div class="group" data-label="Pending" data-value="45" data-max="210">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-[13px] font-semibold text-gray-700">Pending</span>
+                  <span class="text-[13px] font-bold text-gray-800">45</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden" title="Pending: 45 Booking">
+                  <div class="progress-fill h-full rounded-full bg-amber-400" data-target="21.4"></div>
+                </div>
+              </div>
+
+              <!-- Confirmed -->
+              <div class="group" data-label="Confirmed" data-value="82" data-max="210">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-[13px] font-semibold text-gray-700">Confirmed</span>
+                  <span class="text-[13px] font-bold text-gray-800">82</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden" title="Confirmed: 82 Booking">
+                  <div class="progress-fill h-full rounded-full bg-blue-500" data-target="39.0"></div>
+                </div>
+              </div>
+
+              <!-- Checked In -->
+              <div class="group" data-label="Checked In" data-value="124" data-max="210">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-[13px] font-semibold text-gray-700">Checked In</span>
+                  <span class="text-[13px] font-bold text-gray-800">124</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden" title="Checked In: 124 Booking">
+                  <div class="progress-fill h-full rounded-full bg-emerald-500" data-target="59.0"></div>
+                </div>
+              </div>
+
+              <!-- Checked Out -->
+              <div class="group" data-label="Checked Out" data-value="210" data-max="210">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-[13px] font-semibold text-gray-700">Checked Out</span>
+                  <span class="text-[13px] font-bold text-gray-800">210</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden" title="Checked Out: 210 Booking">
+                  <div class="progress-fill h-full rounded-full bg-gray-500" data-target="100"></div>
+                </div>
+              </div>
+
+              <!-- Rejected -->
+              <div class="group" data-label="Rejected" data-value="12" data-max="210">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-[13px] font-semibold text-gray-700">Rejected</span>
+                  <span class="text-[13px] font-bold text-gray-800">12</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden" title="Rejected: 12 Booking">
+                  <div class="progress-fill h-full rounded-full bg-red-500" data-target="5.7"></div>
+                </div>
+              </div>
+
+              <!-- Cancelled -->
+              <div class="group" data-label="Cancelled" data-value="28" data-max="210">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-[13px] font-semibold text-gray-700">Cancelled</span>
+                  <span class="text-[13px] font-bold text-gray-800">28</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden" title="Cancelled: 28 Booking">
+                  <div class="progress-fill h-full rounded-full bg-orange-500" data-target="13.3"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- CARD 2: Room Occupancy -->
+          <div class="bg-white rounded-[20px] border border-gray-100 shadow-sm p-6 flex flex-col">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="font-serif text-[20px] font-bold text-navy">Okupansi Kamar</h2>
+              <button class="text-gray-400 hover:text-navy transition-colors" title="Statistik">
+                <i data-lucide="trending-up" class="w-4.5 h-4.5"></i>
+              </button>
+            </div>
+
+            <!-- Circular Chart -->
+            <div class="flex items-center justify-center flex-1 py-2">
+              <div class="relative w-[180px] h-[180px]">
+                <canvas id="occupancy-chart"></canvas>
+                <!-- Center Text -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span class="font-serif text-[38px] font-bold text-navy leading-none">75<span class="text-[22px]">%</span></span>
+                  <span class="text-[13px] font-semibold text-gray-500 mt-0.5">Terisi</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mini Cards -->
+            <div class="grid grid-cols-2 gap-3 mt-5">
+              <div class="bg-gray-50 rounded-2xl p-3.5 text-center border border-gray-100">
+                <div class="flex items-center justify-center gap-1.5 mb-1.5">
+                  <span class="w-2 h-2 rounded-full bg-gold flex-shrink-0"></span>
+                  <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">TERISI</span>
+                </div>
+                <div class="font-serif text-[26px] font-bold text-navy">150</div>
+              </div>
+              <div class="bg-gray-50 rounded-2xl p-3.5 text-center border border-gray-100">
+                <div class="flex items-center justify-center gap-1.5 mb-1.5">
+                  <span class="w-2 h-2 rounded-full bg-gray-300 flex-shrink-0"></span>
+                  <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">KOSONG</span>
+                </div>
+                <div class="font-serif text-[26px] font-bold text-navy">50</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── CARD 3: Revenue Chart ── -->
+        <div class="bg-white rounded-[20px] border border-gray-100 shadow-sm p-6 mb-8">
+          <!-- Card Header -->
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-gold">
+                <i data-lucide="banknote" class="w-5 h-5"></i>
+              </div>
+              <h2 class="font-serif text-[20px] font-bold text-navy">Pendapatan per Periode</h2>
+            </div>
+            <!-- Filter Dropdown -->
+            <div class="flex items-center gap-2">
+              <span class="text-[13px] font-semibold text-gray-500">Filter:</span>
+              <div class="relative">
+                <select id="revenue-filter" class="pl-3.5 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] font-semibold text-gray-700 focus:outline-none appearance-none cursor-pointer">
+                  <option value="weekly">Bulanan</option>
+                  <option value="daily">Harian</option>
+                  <option value="monthly">Mingguan</option>
+                  <option value="yearly">Tahunan</option>
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
+                  <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Line Chart -->
+          <div class="relative" style="height: 220px;">
+            <canvas id="revenue-chart"></canvas>
+          </div>
+
+          <!-- Footer Divider + Total -->
+          <div class="mt-5 pt-5 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <p class="text-[13px] font-semibold text-gray-500 mb-0.5">Total Pendapatan</p>
+              <p class="font-serif text-[28px] font-bold text-navy leading-tight">Rp 1.250.000.000</p>
+            </div>
+            <div class="flex items-center gap-2 text-[14px] font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl">
+              <i data-lucide="trending-up" class="w-4.5 h-4.5"></i>
+              <span>+12.4% vs bln lalu</span>
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- Footer -->
+      <footer class="border-t border-gray-200/60 py-4 px-8 text-[12px] text-gray-400 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div>© 2026 StayEase Property Management System. All rights reserved.</div>
+        <div class="flex items-center gap-5">
+          <a href="#" onclick="showToast('Pusat Bantuan'); return false;" class="hover:text-navy transition-colors font-medium">Pusat Bantuan</a>
+          <a href="#" onclick="showToast('Kebijakan Privasi'); return false;" class="hover:text-navy transition-colors font-medium">Kebijakan Privasi</a>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- ══════════ JAVASCRIPT ══════════ -->
+  <script>
+    lucide.createIcons();
+
+    // ── Toast ──
+    function showToast(msg) {
+      document.getElementById('toast-msg').textContent = msg;
+      const t = document.getElementById('toast');
+      t.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'), 3000);
+    }
+
+    // ── Month Picker ──
+    const monthBtn = document.getElementById('month-btn');
+    const monthPicker = document.getElementById('month-picker');
+    monthBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      monthPicker.classList.toggle('open');
+    });
+    document.addEventListener('click', () => monthPicker.classList.remove('open'));
+    monthPicker.addEventListener('click', e => e.stopPropagation());
+
+    function selectMonth(label, period) {
+      document.getElementById('month-label').textContent = label;
+      document.getElementById('period-label').textContent = 'Periode: ' + period;
+      // update active state
+      document.querySelectorAll('.month-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      monthPicker.classList.remove('open');
+      showToast('Memuat laporan: ' + label);
+    }
+
+    // ── Progress Bar Animation ──
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.querySelectorAll('.progress-fill').forEach(bar => {
+          const target = bar.getAttribute('data-target');
+          bar.style.width = target + '%';
+        });
+      }, 200);
+    });
+
+    // ── Occupancy Donut Chart ──
+    new Chart(document.getElementById('occupancy-chart'), {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [75, 25],
+          backgroundColor: ['#C89A43', '#F3F4F6'],
+          borderWidth: 0,
+          hoverOffset: 0,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '80%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ctx.dataIndex === 0 ? ' Terisi: 75%' : ' Kosong: 25%',
+            },
+          },
+        },
+        animation: { duration: 1200, easing: 'easeInOutQuart' },
+      },
+    });
+
+    // ── Revenue Line Chart ──
+    const revenueData = {
+      weekly: {
+        labels: ['MINGGU 1', 'MINGGU 2', 'MINGGU 3', 'MINGGU 4', 'MINGGU 5'],
+        data: [180, 245, 390, 520, 310, 240, 410],
+      },
+      daily: {
+        labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+        data: [45, 62, 38, 80, 55, 95, 48],
+      },
+      monthly: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'],
+        data: [200, 285, 310, 275, 372, 381, 428],
+      },
+      yearly: {
+        labels: ['2022', '2023', '2024', '2025', '2026'],
+        data: [820, 940, 1050, 1140, 1250],
+      },
+    };
+
+    const revenueCtx = document.getElementById('revenue-chart').getContext('2d');
+
+    // Gradient fill
+    const gradient = revenueCtx.createLinearGradient(0, 0, 0, 220);
+    gradient.addColorStop(0, 'rgba(15, 42, 68, 0.12)');
+    gradient.addColorStop(1, 'rgba(15, 42, 68, 0.00)');
+
+    const revenueChart = new Chart(revenueCtx, {
+      type: 'line',
+      data: {
+        labels: revenueData.weekly.labels,
+        datasets: [{
+          label: 'Pendapatan',
+          data: revenueData.weekly.data,
+          borderColor: '#0F2A44',
+          backgroundColor: gradient,
+          borderWidth: 2.5,
+          pointRadius: 0,
+          pointHoverRadius: 6,
+          pointHoverBackgroundColor: '#0F2A44',
+          pointHoverBorderColor: '#fff',
+          pointHoverBorderWidth: 2,
+          fill: true,
+          tension: 0.45,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0F2A44',
+            titleColor: '#C89A43',
+            bodyColor: '#ffffff',
+            padding: 12,
+            cornerRadius: 12,
+            displayColors: false,
+            callbacks: {
+              title: ctx => ctx[0].label,
+              label: ctx => ' Rp ' + (ctx.parsed.y * 1000000).toLocaleString('id-ID'),
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: 'Inter', size: 11, weight: '600' }, color: '#9CA3AF' },
+          },
+          y: {
+            display: false,
+            grid: { color: 'rgba(0,0,0,0.04)' },
+          },
+        },
+        animation: { duration: 800, easing: 'easeInOutQuart' },
+      },
+    });
+
+    // Filter switch
+    document.getElementById('revenue-filter').addEventListener('change', function() {
+      const d = revenueData[this.value] || revenueData.weekly;
+      revenueChart.data.labels = d.labels;
+      revenueChart.data.datasets[0].data = d.data;
+      revenueChart.update();
+    });
+
+    // Mobile Sidebar Toggle
+    (function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+      if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+    }());
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masuk ke Akun – StayEase</title>
+  <meta name="description" content="Halaman masuk ke sistem StayEase Hotel Management & Reservation." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Tailwind custom config (identical tokens across all pages) -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:  '#0F2A44',
+            cream: '#FCF9F5',
+            gold:  '#C9974D',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      html, body {
+        height: 100%;
+        font-family: 'Inter', sans-serif;
+      }
+    }
+  </style>
+</head>
+
+<body class="relative min-h-screen w-full flex items-center justify-center bg-gray-900 font-sans antialiased p-4">
+
+  <!-- ============================================================
+       BACKGROUND IMAGE WITH OVERLAY & BLUR
+  ============================================================ -->
+  <div class="fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+    <img src="hero_hotel.png"
+         alt="Background Lobi Hotel StayEase"
+         class="w-full h-full object-cover filter blur-md scale-105 opacity-80" />
+    <div class="absolute inset-0 bg-black/40"></div>
+  </div>
+
+  <!-- ============================================================
+       LOGIN CARD (FLOATING CENTER)
+  ============================================================ -->
+  <main class="relative z-10 w-full max-w-[420px] mx-auto my-auto flex flex-col gap-4">
+    <!-- Back Link -->
+    <a href="index.html" class="flex items-center gap-1.5 text-[14px] font-semibold text-white/80 hover:text-white transition-colors w-fit pl-1">
+      <i data-lucide="chevron-left" class="w-4 h-4"></i>
+      <span>Back</span>
+    </a>
+
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden border-b-4 border-gold p-8 md:p-10">
+
+      <!-- Logo Mark -->
+      <div class="flex justify-center mb-6">
+        <div class="w-20 h-20 bg-[#FCF7EF] rounded-xl flex flex-col items-center justify-center p-2 shadow-sm border border-gold/10">
+          <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 6C15.1634 6 8 13.1634 8 22V38C8 39.1046 8.89543 40 10 40H38C39.1046 40 40 39.1046 40 38V22C40 13.1634 32.8366 6 24 6Z" stroke="#0F2A44" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M18 22C18 18.6863 20.6863 16 24 16C27.3137 16 30 18.6863 30 22C30 24.5 28.2 26.6 25.8 27.5V33H22.2V27.5C19.8 26.6 18 24.5 18 22Z" fill="#C9974D"/>
+            <path d="M26 30H34V34H26V30Z" fill="#0F2A44"/>
+          </svg>
+          <span class="text-[10px] font-bold text-navy font-serif tracking-tight mt-1">StayEase</span>
+        </div>
+      </div>
+
+      <!-- Header Teks -->
+      <div class="text-center mb-6">
+        <h1 class="font-serif text-[22px] md:text-[24px] font-bold text-navy mb-2 leading-tight">
+          Masuk ke Akun Anda
+        </h1>
+        <p class="text-[13px] md:text-[14px] text-gray-500">
+          Kelola properti Anda dengan mudah dan tenang.
+        </p>
+      </div>
+
+      <!-- Form Login (semua role) -->
+      <form id="login-form" action="#" method="POST" class="space-y-4" onsubmit="return false;">
+
+        <!-- Alamat Email -->
+        <div>
+          <label for="email" class="block text-[13px] font-medium text-gray-700 mb-1.5">
+            Alamat Email
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+              <i data-lucide="mail" class="w-4 h-4" aria-hidden="true"></i>
+            </div>
+            <input type="email"
+                   id="email"
+                   name="email"
+                   value="kemangi.ardana@mail.com"
+                   required
+                   class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-[14px] text-gray-800 focus:outline-none focus:border-navy focus:ring-1 focus:ring-navy transition-all" />
+          </div>
+        </div>
+
+        <!-- Kata Sandi -->
+        <div>
+          <label for="password" class="block text-[13px] font-medium text-gray-700 mb-1.5">
+            Kata Sandi
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+              <i data-lucide="lock" class="w-4 h-4" aria-hidden="true"></i>
+            </div>
+            <input type="password"
+                   id="password"
+                   name="password"
+                   value="12345678"
+                   required
+                   class="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-300 rounded-xl text-[14px] text-gray-800 focus:outline-none focus:border-navy focus:ring-1 focus:ring-navy transition-all" />
+            <button type="button"
+                    id="toggle-password"
+                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
+              <i data-lucide="eye" class="w-4 h-4" id="eye-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Ingat Saya & Lupa Kata Sandi -->
+        <div class="flex items-center justify-between pt-1 text-[13px]">
+          <label class="flex items-center gap-2 cursor-pointer text-gray-600">
+            <input type="checkbox" name="remember" class="w-4 h-4 rounded border-gray-300 text-navy focus:ring-navy accent-navy" />
+            <span>Ingat Saya</span>
+          </label>
+          <a href="#" onclick="alert('Fitur reset kata sandi dikirim ke email'); return false;" class="font-medium text-gold hover:underline">
+            Lupa kata sandi?
+          </a>
+        </div>
+
+        <!-- Tombol Masuk -->
+        <div class="pt-2">
+          <button type="submit"
+                  class="w-full py-3 bg-navy hover:bg-navy-mid text-white font-bold text-[15px] rounded-xl shadow-md transition-colors duration-200">
+            Masuk
+          </button>
+        </div>
+
+      </form>
+
+      <!-- Footer Link Register -->
+      <div class="mt-6 text-center text-[13px] text-gray-600">
+        Belum punya akun? <a href="register.html" class="font-semibold text-gold hover:underline">Daftar di sini</a>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ============================================================
+       JAVASCRIPT — Toggle password visibility
+  ============================================================ -->
+  <script>
+    lucide.createIcons();
+
+    // Toggle Password Visibility
+    document.getElementById('toggle-password').addEventListener('click', function () {
+      const pwd = document.getElementById('password');
+      const icon = document.getElementById('eye-icon');
+      const isHidden = pwd.getAttribute('type') === 'password';
+      pwd.setAttribute('type', isHidden ? 'text' : 'password');
+      icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+      lucide.createIcons();
+    });
+
+    // ── Multi-role Login Router ──
+    // (Demo mode: routes by email keyword. In production, replace with real API auth.)
+    function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.toLowerCase();
+
+      if (email.includes('admin')) {
+        window.location.href = 'admin-dashboard.html';
+      } else if (email.includes('receptionist') || email.includes('resepsionis')) {
+        window.location.href = 'receptionist-dashboard.html';
+      } else {
+        window.location.href = 'customer-dashboard.html';
+      }
+    }
+  </script>
+
+</body>
+</html>

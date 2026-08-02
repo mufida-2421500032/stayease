@@ -1,0 +1,456 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Riwayat Booking Saya â€“ StayEase</title>
+  <meta name="description" content="Riwayat reservasi hotel customer StayEase." />
+
+  <!-- Google Fonts: Inter + Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Tailwind custom config (identical tokens) -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              DEFAULT: '#0F2A44',
+              light:   '#183654',
+            },
+            cream: '#FCF9F5',
+            gold:  '#C9974D',
+            page:  '#FAFAFA',
+          },
+          fontFamily: {
+            sans:  ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  
+  
+  <style type="text/tailwindcss">
+    @layer base {
+      html { scroll-behavior: smooth; }
+      body {
+        background-color: #F8F8F8;
+        font-family: 'Inter', sans-serif;
+        color: #1F2937;
+      }
+    }
+
+    @layer components {
+      .sidebar-link {
+        @apply flex items-center gap-3 px-4 py-3 text-[15px] font-medium text-gray-600 rounded-lg
+               hover:bg-gray-100 hover:text-navy transition-all duration-150 relative;
+      }
+      .sidebar-link-active {
+        @apply flex items-center gap-3 px-4 py-3 text-[15px] font-bold text-navy bg-gray-100 rounded-lg relative;
+      }
+      .sidebar-link-active::after {
+        content: '';
+        @apply absolute right-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-gold rounded-l;
+      }
+    }
+
+    @media (min-width: 768px) {
+      #hamburger-btn, #mobile-menu { display: none !important; }
+    }
+  </style>
+</head>
+
+<body class="antialiased min-h-screen bg-page flex">
+
+  <!-- ============================================================
+       MOBILE SIDEBAR OVERLAY & DRAWER
+  ============================================================ -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden" aria-hidden="true"></div>
+
+  <!-- ============================================================
+       SIDEBAR (FIXED LEFT)
+  ============================================================ -->
+    <aside id="sidebar"
+         class="fixed top-0 left-0 bottom-0 z-50 w-[260px] xl:w-[280px] bg-white border-r border-gray-200
+                flex flex-col justify-between p-6 transition-transform duration-300 lg:translate-x-0 -translate-x-full"
+         aria-label="Navigasi Utama Dashboard">
+
+    <!-- Top Section: Brand & Nav Links -->
+    <div>
+      <!-- Brand Logo -->
+      <div class="mb-10 pl-2">
+        <a href="index.html" class="block">
+          <span class="font-serif text-[32px] font-bold text-navy tracking-tight leading-none block">StayEase</span>
+          <span class="text-[13px] text-gray-500 font-normal tracking-wide block mt-1">Property Management</span>
+        </a>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="space-y-1.5" role="navigation" aria-label="Menu Sidebar">
+        <a href="customer-dashboard.html" class="sidebar-link" >
+          <i data-lucide="layout-grid" class="w-5 h-5 text-gray-500" aria-hidden="true"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="customer-rooms.html" class="sidebar-link" >
+          <i data-lucide="bed" class="w-5 h-5 text-gray-500" aria-hidden="true"></i>
+          <span>Rooms</span>
+        </a>
+        <a href="history.html" class="sidebar-link-active" aria-current="page">
+          <i data-lucide="history" class="w-5 h-5 text-navy" aria-hidden="true"></i>
+          <span>Riwayat</span>
+        </a>
+        <a href="settings.html" class="sidebar-link" >
+          <i data-lucide="settings" class="w-5 h-5 text-gray-500" aria-hidden="true"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Bottom Section: Logout -->
+    <div class="pt-6 border-t border-gray-100">
+      <a href="login.html" id="btn-logout" class="flex items-center gap-3 px-4 py-3 text-[15px] font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+        <i data-lucide="log-out" class="w-5 h-5 text-red-500" aria-hidden="true"></i>
+        <span>Keluar</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ============================================================
+       MAIN CONTENT WRAPPER
+  ============================================================ -->
+  <div class="flex-1 lg:ml-[260px] xl:ml-[280px] flex flex-col min-h-screen min-w-0">
+
+    <!-- ============================================================
+         TOP NAVIGATION BAR
+    ============================================================ -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 px-6 lg:px-10 py-3.5 flex items-center justify-between gap-4">
+
+      <!-- Left: Mobile Menu Button & Search Input -->
+      <div class="flex items-center gap-3 flex-1 max-w-md">
+        <button id="mobile-menu-btn" class="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg" aria-label="Buka Sidebar Menu">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+
+        <!-- Search Box -->
+        <div class="relative w-full">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+            <i data-lucide="search" class="w-4 h-4"></i>
+          </div>
+          <input type="text"
+                 placeholder="Search for rooms or guests..."
+                 class="w-full pl-10 pr-4 py-2 bg-gray-100 border border-transparent rounded-full text-[14px] text-gray-800 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-gray-300 transition-all" />
+        </div>
+      </div>
+
+      <!-- Right: Action Icons & Profile -->
+      <div class="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+        <button class="p-2 text-gray-500 hover:text-navy hover:bg-gray-100 rounded-full transition-colors relative" aria-label="Notifikasi">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-gold rounded-full"></span>
+        </button>
+
+        <button class="p-2 text-gray-500 hover:text-navy hover:bg-gray-100 rounded-full transition-colors" aria-label="Bantuan">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+
+        <button class="p-2 text-gray-500 hover:text-navy hover:bg-gray-100 rounded-full transition-colors" aria-label="Aplikasi Grid">
+          <i data-lucide="grid" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Vertical Divider -->
+        <div class="w-px h-6 bg-gray-200 hidden sm:block"></div>
+
+        <!-- Profile Widget -->
+        <div class="flex items-center gap-3">
+          <div class="text-right hidden sm:block">
+            <div class="text-[14px] font-bold text-navy leading-none">Kemangi Ardana</div>
+            <div class="text-[11px] font-bold text-gold tracking-wider mt-1 uppercase">GOLD MEMBER</div>
+          </div>
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+               alt="Foto Profil Kemangi Ardana"
+               class="w-10 h-10 rounded-full object-cover border-2 border-gold/30 shadow-sm" />
+        </div>
+      </div>
+
+    </header>
+
+    <!-- ============================================================
+         CONTENT AREA
+    ============================================================ -->
+    <main class="flex-1 px-6 lg:px-10 py-8 space-y-7 max-w-[1240px]">
+
+      <!-- â”€â”€ 7. HEADING SECTION â”€â”€ -->
+      <section aria-labelledby="history-heading">
+        <h1 id="history-heading" class="font-serif text-[32px] sm:text-[36px] font-bold text-navy leading-tight mb-2">
+          Riwayat Booking Saya
+        </h1>
+        <p class="text-[15px] sm:text-[16px] text-gray-500 max-w-3xl leading-relaxed">
+          Kelola semua reservasi penginapan Anda di satu tempat. Anda dapat memantau status pembayaran, melakukan check-in mandiri, atau membatalkan reservasi.
+        </p>
+      </section>
+
+      <!-- â”€â”€ 8. FILTER STATUS TABS â”€â”€ -->
+      <section class="border-b border-gray-200 overflow-x-auto pb-0.5 scrollbar-none" aria-label="Filter Status Reservasi">
+        <div class="flex items-center gap-6 sm:gap-8">
+          <button type="button" class="filter-tab filter-tab-active" data-status="all">Semua Booking</button>
+          <button type="button" class="filter-tab" data-status="pending">Pending</button>
+          <button type="button" class="filter-tab" data-status="confirmed">Confirmed</button>
+          <button type="button" class="filter-tab" data-status="checkedin">Checked In</button>
+          <button type="button" class="filter-tab" data-status="checkedout">Checked Out</button>
+          <button type="button" class="filter-tab" data-status="cancelled">Dibatalkan</button>
+        </div>
+      </section>
+
+      <!-- â”€â”€ 9â€“11. TABEL BOOKING â”€â”€ -->
+      <section class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" aria-label="Tabel Riwayat Booking">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse min-w-[850px]">
+            <thead>
+              <tr class="bg-gray-50/70 border-b border-gray-100 text-[12px] font-bold text-gray-400 uppercase tracking-wider">
+                <th class="py-4 px-5">NO. KAMAR</th>
+                <th class="py-4 px-5">TIPE KAMAR</th>
+                <th class="py-4 px-5">CHECK-IN</th>
+                <th class="py-4 px-5">CHECK-OUT</th>
+                <th class="py-4 px-5">TOTAL HARGA</th>
+                <th class="py-4 px-5 text-center">STATUS</th>
+                <th class="py-4 px-5 text-center w-[150px]">AKSI</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body" class="divide-y divide-gray-100 text-[14px] text-gray-700">
+
+              <!-- â”€â”€ Row 1: Pending â”€â”€ -->
+              <tr class="hover:bg-gray-50/60 transition-colors" data-row-status="pending">
+                <td class="py-5 px-5 font-bold text-navy text-[15px]">A-204</td>
+                <td class="py-5 px-5">
+                  <div class="font-semibold text-navy">Deluxe King Suite</div>
+                  <div class="text-[12px] text-gray-400">City View â€¢ Breakfast Incl.</div>
+                </td>
+                <td class="py-5 px-5 font-medium text-gray-800">15 Juli 2026</td>
+                <td class="py-5 px-5 font-medium text-gray-800">18 Juli 2026</td>
+                <td class="py-5 px-5 font-bold text-navy">Rp 4.250.000</td>
+                <td class="py-5 px-5 text-center">
+                  <span class="badge-pending status-badge">Pending</span>
+                </td>
+                <td class="py-5 px-5 text-center">
+                  <div class="flex flex-col items-center gap-1.5">
+                    <button type="button" class="btn-cancel-red btn-cancel-trigger">Batalkan</button>
+                    <a href="booking-details.html" class="btn-detail-navy">Lihat Detail</a>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- â”€â”€ Row 2: Confirmed â”€â”€ -->
+              <tr class="hover:bg-gray-50/60 transition-colors" data-row-status="confirmed">
+                <td class="py-5 px-5 font-bold text-navy text-[15px]">B-102</td>
+                <td class="py-5 px-5">
+                  <div class="font-semibold text-navy">Executive Terrace</div>
+                  <div class="text-[12px] text-gray-400">Garden Access â€¢ Minibar</div>
+                </td>
+                <td class="py-5 px-5 font-medium text-gray-800">12 Juli 2026</td>
+                <td class="py-5 px-5 font-medium text-gray-800">14 Juli 2026</td>
+                <td class="py-5 px-5 font-bold text-navy">Rp 2.800.000</td>
+                <td class="py-5 px-5 text-center">
+                  <span class="badge-confirmed status-badge">Confirmed</span>
+                </td>
+                <td class="py-5 px-5 text-center">
+                  <a href="booking-details.html" class="btn-detail-navy">Lihat Detail</a>
+                </td>
+              </tr>
+
+              <!-- â”€â”€ Row 3: Checked In â”€â”€ -->
+              <tr class="hover:bg-gray-50/60 transition-colors" data-row-status="checkedin">
+                <td class="py-5 px-5 font-bold text-navy text-[15px]">PH-01</td>
+                <td class="py-5 px-5">
+                  <div class="font-semibold text-navy">Presidential Penthouse</div>
+                  <div class="text-[12px] text-gray-400">Private Pool â€¢ 24/7 Butler</div>
+                </td>
+                <td class="py-5 px-5 font-medium text-gray-800">10 Juli 2026</td>
+                <td class="py-5 px-5 font-medium text-gray-800">12 Juli 2026</td>
+                <td class="py-5 px-5 font-bold text-navy">Rp 15.000.000</td>
+                <td class="py-5 px-5 text-center">
+                  <span class="badge-checkedin status-badge">Checked In</span>
+                </td>
+                <td class="py-5 px-5 text-center">
+                  <a href="booking-details.html" class="btn-detail-navy">Lihat Detail</a>
+                </td>
+              </tr>
+
+              <!-- â”€â”€ Row 4: Checked Out (Disabled detail) â”€â”€ -->
+              <tr class="hover:bg-gray-50/60 transition-colors" data-row-status="checkedout">
+                <td class="py-5 px-5 font-bold text-navy text-[15px]">C-305</td>
+                <td class="py-5 px-5">
+                  <div class="font-semibold text-navy">Standard Twin Room</div>
+                  <div class="text-[12px] text-gray-400">Quiet Zone â€¢ Near Lift</div>
+                </td>
+                <td class="py-5 px-5 font-medium text-gray-800">01 Juli 2026</td>
+                <td class="py-5 px-5 font-medium text-gray-800">03 Juli 2026</td>
+                <td class="py-5 px-5 font-bold text-navy">Rp 1.500.000</td>
+                <td class="py-5 px-5 text-center">
+                  <span class="badge-checkedout status-badge">Checked Out</span>
+                </td>
+                <td class="py-5 px-5 text-center">
+                  <button type="button" disabled class="btn-detail-disabled">Lihat Detail</button>
+                </td>
+              </tr>
+
+              <!-- â”€â”€ Row 5: Dibatalkan (Disabled detail) â”€â”€ -->
+              <tr class="hover:bg-gray-50/60 transition-colors" data-row-status="cancelled">
+                <td class="py-5 px-5 font-bold text-navy text-[15px]">A-402</td>
+                <td class="py-5 px-5">
+                  <div class="font-semibold text-navy">Luxury Ocean Suite</div>
+                  <div class="text-[12px] text-gray-400">Balcony â€¢ Jet Tub</div>
+                </td>
+                <td class="py-5 px-5 font-medium text-gray-800">20 Juli 2026</td>
+                <td class="py-5 px-5 font-medium text-gray-800">22 Juli 2026</td>
+                <td class="py-5 px-5 font-bold text-navy">Rp 5.200.000</td>
+                <td class="py-5 px-5 text-center">
+                  <span class="badge-cancelled status-badge">Dibatalkan</span>
+                </td>
+                <td class="py-5 px-5 text-center">
+                  <button type="button" disabled class="btn-detail-disabled">Lihat Detail</button>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- â”€â”€ 12 & 13. INFORMASI JUMLAH DATA & PAGINATION â”€â”€ -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 text-[14px]">
+        <p class="text-gray-500">
+          Menampilkan 1â€“5 dari 24 reservasi ditemukan
+        </p>
+
+        <!-- Pagination -->
+        <nav class="flex items-center gap-1.5" aria-label="Navigasi Halaman">
+          <button type="button" class="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-100" aria-label="Sebelumnya">
+            &lt;
+          </button>
+          <button type="button" class="w-8 h-8 flex items-center justify-center rounded-md bg-navy text-white font-bold text-[13px]" aria-current="page">
+            1
+          </button>
+          <button type="button" class="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-700 hover:bg-gray-100 text-[13px]">
+            2
+          </button>
+          <button type="button" class="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-700 hover:bg-gray-100 text-[13px]">
+            3
+          </button>
+          <button type="button" class="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-100" aria-label="Berikutnya">
+            &gt;
+          </button>
+        </nav>
+      </div>
+
+      <!-- â”€â”€ 14. PROMO BANNER CARD â”€â”€ -->
+      <section class="relative bg-navy rounded-2xl overflow-hidden shadow-md text-white mt-10 p-8 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6" aria-label="Promo Banner Liburan">
+        <!-- Hotel Image Right Overlay -->
+        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80"
+             alt="Resort Hotel View"
+             class="absolute inset-y-0 right-0 w-full md:w-1/2 object-cover opacity-25 md:opacity-35 pointer-events-none" />
+        <div class="absolute inset-0 bg-gradient-to-r from-navy via-navy to-transparent pointer-events-none"></div>
+
+        <!-- Left Content -->
+        <div class="relative z-10 max-w-xl">
+          <h2 class="font-serif text-[24px] sm:text-[28px] font-bold text-white mb-2 leading-tight">
+            Ingin merencanakan liburan berikutnya?
+          </h2>
+          <p class="text-[14px] sm:text-[15px] text-white/80 leading-relaxed mb-6">
+            Nikmati diskon eksklusif hingga 20% untuk reservasi lebih awal bagi anggota Premium StayEase.
+          </p>
+          <a href="customer-rooms.html" class="inline-flex items-center gap-2 bg-gold hover:bg-[#b8883e] text-navy font-bold text-[14px] px-6 py-3 rounded-lg transition-colors shadow-md">
+            <span>Jelajahi Koleksi Kamar</span>
+            <span>&rarr;</span>
+          </a>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- ============================================================
+       JAVASCRIPT
+  ============================================================ -->
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // â”€â”€ Mobile Sidebar Drawer Toggle â”€â”€
+    (function () {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+
+      function openSidebar()  { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full');    overlay.classList.add('hidden'); }
+
+      if (menuBtn) menuBtn.addEventListener('click', openSidebar);
+      if (overlay)  overlay.addEventListener('click', closeSidebar);
+    }());
+
+    // â”€â”€ Status Filter Tab Interactivity â”€â”€
+    (function () {
+      const tabs = document.querySelectorAll('.filter-tab');
+      const rows = document.querySelectorAll('#history-table-body tr');
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+          tabs.forEach(t => t.classList.remove('filter-tab-active'));
+          this.classList.add('filter-tab-active');
+
+          const filter = this.getAttribute('data-status');
+          rows.forEach(row => {
+            const status = row.getAttribute('data-row-status');
+            if (filter === 'all' || status === filter) {
+              row.style.display = '';
+            } else {
+              row.style.display = 'none';
+            }
+          });
+        });
+      });
+    }());
+
+    // â”€â”€ Batalkan Booking Trigger â”€â”€
+    (function () {
+      const cancelBtns = document.querySelectorAll('.btn-cancel-trigger');
+
+      cancelBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+          const confirmed = confirm('Apakah Anda yakin ingin membatalkan reservasi ini?');
+          if (confirmed) {
+            const row = this.closest('tr');
+            row.setAttribute('data-row-status', 'cancelled');
+
+            // Update badge text and style
+            const badge = row.querySelector('.status-badge');
+            badge.className = 'badge-cancelled status-badge';
+            badge.textContent = 'Dibatalkan';
+
+            // Replace action cell with disabled button
+            const actionCell = this.closest('td');
+            actionCell.innerHTML = '<button type="button" disabled class="btn-detail-disabled">Lihat Detail</button>';
+          }
+        });
+      });
+    }());
+  </script>
+
+</body>
+</html>
+
+
