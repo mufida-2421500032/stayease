@@ -64,6 +64,19 @@
     @media (min-width: 768px) {
       #hamburger-btn, #mobile-menu { display: none !important; }
     }
+
+    @keyframes bounceIcon {
+      0%, 100% { transform: scale(1); }
+      30%       { transform: scale(1.35) rotate(-10deg); }
+      60%       { transform: scale(0.9) rotate(5deg); }
+    }
+    .animate-bounce-icon {
+      animation: bounceIcon 0.5s ease forwards;
+    }
+
+    #btn-confirm-booking {
+      transition: background-color 0.45s ease, box-shadow 0.45s ease, transform 0.15s ease;
+    }
   </style>
 </head>
 
@@ -331,10 +344,10 @@
           <!-- Submit Button -->
           <div class="pt-2 space-y-3">
             <button id="btn-confirm-booking" type="button"
-                    class="w-full py-4 bg-navy hover:bg-[#10273d] text-white font-semibold text-[16px] rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
-                    onclick="window.location.href='booking-details.html'">
-              <span>Konfirmasi Booking</span>
-              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    class="w-full py-4 bg-navy hover:bg-[#10273d] text-white font-semibold text-[16px] rounded-xl shadow-md transition-all duration-500 flex items-center justify-center gap-2"
+                    onclick="handleBookingConfirm()">
+              <span id="btn-label">Konfirmasi Booking</span>
+              <i id="btn-icon" data-lucide="chevron-right" class="w-4 h-4"></i>
             </button>
             <p class="text-center text-[12px] text-gray-500">
               Dengan mengklik konfirmasi, Anda menyetujui <a href="#" onclick="alert('Syarat & Ketentuan StayEase'); return false;" class="underline font-semibold text-gray-700 hover:text-navy">Syarat & Ketentuan</a> kami.
@@ -374,6 +387,39 @@
         overlay.addEventListener('click', closeSidebar);
       }
     }());
+
+    // Booking Confirm Animation
+    function handleBookingConfirm() {
+      const btn = document.getElementById('btn-confirm-booking');
+      const label = document.getElementById('btn-label');
+      const icon = document.getElementById('btn-icon');
+
+      if (btn.disabled) return;
+      btn.disabled = true;
+
+      // Scale-down effect saat klik
+      btn.style.transform = 'scale(0.97)';
+      setTimeout(() => { btn.style.transform = 'scale(1)'; }, 150);
+
+      // Setelah 200ms, ubah ke state sukses (hijau)
+      setTimeout(() => {
+        // Hapus kelas warna lama, tambah hijau
+        btn.classList.remove('bg-navy', 'hover:bg-[#10273d]');
+        btn.classList.add('bg-emerald-500');
+        btn.style.boxShadow = '0 0 0 4px rgba(16, 185, 129, 0.25)';
+
+        // Ganti teks & ikon
+        label.textContent = 'Booking Berhasil!';
+        icon.setAttribute('data-lucide', 'check-circle');
+        icon.className = 'w-5 h-5 animate-bounce-icon';
+        lucide.createIcons();
+      }, 200);
+
+      // Setelah 1900ms, redirect ke booking-details.html
+      setTimeout(() => {
+        window.location.href = 'booking-details.html';
+      }, 1900);
+    }
   </script>
 </body>
 </html>
